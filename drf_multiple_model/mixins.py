@@ -50,25 +50,28 @@ class MultipleModelMixin(object):
             if self.flat:
                 for obj in queryset:
 
-                    data = pair[1](obj)
+                    data = pair[1](obj).data
 
                     # Add the model type to each value, if flag is set
                     try:
-                        data.update('type':pair[2])
+                        data.update({'type':pair[2]})
                     except IndexError:
                         if self.add_model_type:
                             model = obj.__class__.__name__.lower()   
-                            data.update('type':model)   
+                            data.update({'type':model})   
 
                     results.append(data)  
             else:  
-                data = pair[1](queryset,many=True)
+                data = pair[1](queryset,many=True).data
 
                 try:
                     data = { pair[2]: data}
                 except IndexError:
                     if self.add_model_type:
-                        model = queryset[0].__class__.__name__.lower() 
+                        try:
+                            model = queryset[0].__class__.__name__.lower() 
+                        except IndexError:
+                            model = 'empty_set'
                         data = { model: data }
 
                 results.append(data)
@@ -76,7 +79,7 @@ class MultipleModelMixin(object):
 
         # Sort by given attribute, if sorting_Attribute is required
         if self.sorting_field and self.flat:
-            object_list = sorted(object_list, key=lambda datum: datum[self.sorting_field]))
+            results = sorted(results, key=lambda datum: datum[self.sorting_field])
 
 
         return Response(results)
