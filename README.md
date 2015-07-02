@@ -29,7 +29,7 @@ from drf_multiple_model.views import MultipleModelAPIView
 
 # Usage
 
-**drf-multiple-model** comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tutple of queryset/serializer pairs (in that order).  For example, imagine the following models and serializers:
+**drf-multiple-model** comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tutple of queryset/serializer pairs (in that order).  For example, let's say you have the following models and serializers:
 
 ```
 # Models
@@ -74,21 +74,24 @@ which would return:
 
 ```
 [
-    [
-        {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'pages': 350},
-        {'genre': 'Tragedy', 'title': "Romeo and Juliet", 'pages: 300},
-        ....
-    ],
-    [
-        {'title': 'Shall I compare thee to a summer's day?', 'stanzas': 1},
-        {'title': 'As a decrepit father takes delight', 'stanzas': 1},
-        ....
-    ],
-
+    {
+        'play' : [
+                {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'pages': 350},
+                {'genre': 'Tragedy', 'title': "Romeo and Juliet", 'pages: 300},
+                ....
+            ],
+    },
+    {
+        'poem' : [
+                {'title': 'Shall I compare thee to a summer's day?', 'stanzas': 1},
+                {'title': 'As a decrepit father takes delight', 'stanzas': 1},
+                ....
+            ],
+    }
 ]
 ```
 
-You can add a third attribute, a string, to the queryList tuples to provide a unique label, like so:
+By default, `MultipleModelAPIView` uses the model name as a label.  If you want to use a custome label, you can add a third attribute, a string, to the queryList tuples, like so:
 
 ```
 from drf_multiple_model.views import MultipleModelAPIView
