@@ -2,6 +2,8 @@ from rest_framework.response import Response
 
 from itertools import chain
 
+from django.db import connection
+
 class MultipleModelMixin(object):
     """
     Create a list of objects from multiple models/serializers.
@@ -45,41 +47,40 @@ class MultipleModelMixin(object):
         # Iterate through the queryList, run each queryset and serialize the data
         results = []
         for pair in self.queryList:
+            # Run the queryset through Django Rest Framework filters
             queryset = self.filter_queryset(pair[0])
 
+            # Run the paired serializer
+            data = pair[1](queryset,many=True).data
+
+            # Get the label, unless add_model_type is note set
+            try:
+                label = pair[2]
+            except IndexError:
+                if self.add_model_type:
+                    label = queryset.model.__name__.lower() 
+                else:
+                    label = None
+
+            # if flat=True, Organize the data in a flat manner
             if self.flat:
-                for obj in queryset:
-
-                    data = pair[1](obj).data
-
-                    # Add the model type to each value, if flag is set
-                    try:
-                        data.update({'type':pair[2]})
-                    except IndexError:
-                        if self.add_model_type:
-                            model = obj.__class__.__name__.lower()   
-                            data.update({'type':model})   
-
-                    results.append(data)  
-            else:  
-                data = pair[1](queryset,many=True).data
-
-                try:
-                    data = { pair[2]: data}
-                except IndexError:
-                    if self.add_model_type:
-                        try:
-                            model = queryset[0].__class__.__name__.lower() 
-                        except IndexError:
-                            model = 'empty_set'
-                        data = { model: data }
+                for datum in data:
+                    if label:
+                        datum.update({'type':label})
+                    results.append(datum)
+            
+            # Otherwise, group the data by Model/Queryset
+            else:
+                if label:
+                    data = { label: data }
 
                 results.append(data)
-
-
-        # Sort by given attribute, if sorting_Attribute is required
+                
+        # Sort by given attribute, if sorting_attribute is provided
         if self.sorting_field and self.flat:
             results = sorted(results, key=lambda datum: datum[self.sorting_field])
 
 
         return Response(results)
+
+

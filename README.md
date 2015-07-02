@@ -1,8 +1,8 @@
 # Multiple Model View
 
-[Django Rest Framework](https://github.com/tomchristie/django-rest-framework) provides some incredible tools for serializing data, but sometimes you need to combine many serializers and/or models into a single API call.  *drf-multiple-model* is an app designed to do just that.
+[Django Rest Framework](https://github.com/tomchristie/django-rest-framework) provides some incredible tools for serializing data, but sometimes you need to combine many serializers and/or models into a single API call.  **drf-multiple-model** is an app designed to do just that.
 
-*drf-multiple-model* comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tutple of queryset/serializer pairs (in that order).  For example, imagine the following models and serializers:
+**drf-multiple-model** comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tutple of queryset/serializer pairs (in that order).  For example, imagine the following models and serializers:
 
 ```
 # Models
@@ -155,4 +155,46 @@ would return:
 ]
 ```
 
-**WARNING:** the field chosen for ordering must be shared by all models/serializers in your queryList.  Any attempt to sort objects along non_shared fields with throw a KeyError.
+**WARNING:** the field chosen for ordering must be shared by all models/serializers in your queryList.  Any attempt to sort objects along non_shared fields with throw a `KeyError`.
+
+### add_model_type
+
+If no label is explicitly specified in your `queryList`, `MultipleModelAPIView` will use the model from each queryset a label.  If you don't want any extra labeling and just want your data as is, set `add_model_type = False`:
+
+```
+class TextAPIView(MultipleModelAPIView):
+    add_model_type = False
+
+    queryList = [
+        (Play.objects.all(),PlaySerializer,'plays'),
+        (Poem.objects.filter(style='Sonnet'),PoemSerializer,'sonnets'),
+        ....
+    ]
+```
+
+would return:
+
+```
+[
+    [
+        {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'pages': 350},
+        {'genre': 'Tragedy', 'title': "Romeo and Juliet", 'pages: 300},
+        ....
+    ],
+    [
+        {'title': 'Shall I compare thee to a summer's day?', 'stanzas': 1},
+        {'title': 'As a decrepit father takes delight', 'stanzas': 1},
+        ....
+    ]
+]
+
+This works with `flat = True` set as well -- the `'type':'myModel'` won't be appended to each data point in that case.  **Note:** adding a custom label to your queryList elements will **always** override add_model_type.  However, labels are taken on an element-by-element basis, so you can add labels for some of your models/querysets, but not others.
+
+# Mixin
+
+If you want to combine `MultipleModelAPIView`'s `list()` function with other views, you can use the included `MultipleModelMixin` instead.
+
+
+
+
+
