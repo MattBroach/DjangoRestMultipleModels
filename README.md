@@ -187,6 +187,7 @@ would return:
         ....
     ]
 ]
+```
 
 This works with `flat = True` set as well -- the `'type':'myModel'` won't be appended to each data point in that case.  **Note:** adding a custom label to your queryList elements will **always** override add_model_type.  However, labels are taken on an element-by-element basis, so you can add labels for some of your models/querysets, but not others.
 
