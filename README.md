@@ -219,13 +219,48 @@ would return:
 ]
 ```
 
+
 This works with `flat = True` set as well -- the `'type':'myModel'` won't be appended to each data point in that case.  **Note:** adding a custom label to your queryList elements will **always** override add_model_type.  However, labels are taken on an element-by-element basis, so you can add labels for some of your models/querysets, but not others.
+
+### get_queryList
+
+**drf-multiple-model** now supports the creation of dynamic queryLists, by overwriting the get_queryList() function rather than simply specifying the queryList variable.  This allows you to do things like construct queries using url kwargs, etc:
+
+```
+class DynamicQueryView(MultipleModelAPIView):
+    def get_queryList(self):
+        title = self.kwargs['play'].replace('-',' ')
+
+        queryList = ((Play.objects.filter(title=title),PlaySerializer),
+                     (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+
+        return queryList
+```
+
+would return:
+
+```
+[
+    { 'play': [
+            {'title':'Julius Caesar','genre':'Tragedy','year':1623},
+        ]
+    },
+    { 'poem': [
+            {'title':"Shall I compare thee to a summer's day?",'style':'Sonnet'},
+            {'title':"As a decrepit father takes delight",'style':'Sonnet'}
+    ]}
+]
+```
 
 # Mixin
 
 If you want to combine `MultipleModelAPIView`'s `list()` function with other views, you can use the included `MultipleModelMixin` instead.
 
+# Version Notes
 
+* 1.1 -- Added `get_queryList()` function to support creation of dynamic queryLists
+
+* 1.0 -- initial release
 
 
 
