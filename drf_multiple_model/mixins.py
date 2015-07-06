@@ -42,11 +42,23 @@ class MultipleModelMixin(object):
     # Flag to append the particular django model being used to the data
     add_model_type = True
 
+    def get_queryList(self):
+        assert self.queryList is not None, (
+            "'%s' should either include a `queryList` attribute, "
+            "or override the `get_queryList()` method."
+            % self.__class__.__name__
+        )
+
+        queryList = self.queryList
+
+        return queryList
+
     def list(self, request, *args, **kwargs):
+        queryList = self.get_queryList()
 
         # Iterate through the queryList, run each queryset and serialize the data
         results = []
-        for pair in self.queryList:
+        for pair in queryList:
             # Run the queryset through Django Rest Framework filters
             queryset = self.filter_queryset(pair[0])
 
@@ -75,6 +87,8 @@ class MultipleModelMixin(object):
                     data = { label: data }
 
                 results.append(data)
+
+
                 
         # Sort by given attribute, if sorting_attribute is provided
         if self.sorting_field and self.flat:

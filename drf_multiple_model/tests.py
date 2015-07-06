@@ -95,6 +95,20 @@ class FlatLabelView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer,'Drama'),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer,'Poetry'))
 
+# Testing missing queryList
+class BrokenView(MultipleModelAPIView):
+    pass
+
+# Testing get_queryList function
+class DynamicQueryView(MultipleModelAPIView):
+    def get_queryList(self):
+        title = self.kwargs['play'].replace('-',' ')
+
+        queryList = ((Play.objects.filter(title=title),PlaySerializer),
+                     (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+
+        return queryList
+
 # Tests 
 
 class TestMMViews(TestCase):
@@ -346,6 +360,39 @@ class TestMMViews(TestCase):
             OrderedDict([('title',"As a decrepit father takes delight"),('style','Sonnet'),('type', 'Poetry')]),
         ])
 
+    def test_missing_queryList(self):
+        """
+        not specifying a queryList or a get_queryList should raise an AssertionError
+        """
 
+        view = BrokenView.as_view()
 
+        request = factory.get('/')
+
+        self.assertRaises(AssertionError,view,request)
+
+    def test_dynamic_queryList(self):
+        """
+        using get_QueryList allows the construction of dynamic queryLists
+        """
+
+        view = DynamicQueryView.as_view()
+
+        request = factory.get('/Julius-Caesar')
+        with self.assertNumQueries(2):
+            response = view(request,play="Julius-Caesar")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(len(response.data),2)
+        self.assertEqual(response.data,[
+            { 'play': [
+                    {'title':'Julius Caesar','genre':'Tragedy','year':1623},
+                ]
+            },
+            { 'poem': [
+                    {'title':"Shall I compare thee to a summer's day?",'style':'Sonnet'},
+                    {'title':"As a decrepit father takes delight",'style':'Sonnet'}
+            ]}
+        ]);
 
