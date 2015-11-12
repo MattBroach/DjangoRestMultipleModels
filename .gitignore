@@ -24,4 +24,13 @@ MANIFEST.in
 *.rst
 dist/
 django_rest_multiple_models.egg-info/
-setup.py
+
+# Environment #
+###############
+setup.sh
+Vagrantfile
+.vagrant/
+testproj/
+manage.py
+*swp
+db.sqlite3

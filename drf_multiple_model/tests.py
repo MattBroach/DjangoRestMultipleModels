@@ -1,8 +1,10 @@
 from django.db import models
-from django.test import TestCase 
+from django.test import TestCase, override_settings
+from django.conf.urls import url
 
-from rest_framework import serializers, status
+from rest_framework import serializers, status, renderers
 from rest_framework.test import APIRequestFactory
+from rest_framework.test import APIClient
 
 from drf_multiple_model.views import MultipleModelAPIView
 
@@ -48,6 +50,12 @@ class PoemSerializer(serializers.ModelSerializer):
 
 # For testing that the default settings behave normally
 class BasicTestView(MultipleModelAPIView):
+    queryList = ((Play.objects.all(),PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+
+class TestBrowsableAPIView(MultipleModelAPIView):
+    renderer_classes = (renderers.BrowsableAPIRenderer,)
+
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
 
@@ -109,8 +117,13 @@ class DynamicQueryView(MultipleModelAPIView):
 
         return queryList
 
-# Tests 
+# Fake URL Patterns for running tests
+urlpatterns = [
+    url(r"^$",TestBrowsableAPIView.as_view()),
+]
 
+# Tests 
+@override_settings(ROOT_URLCONF=__name__)
 class TestMMViews(TestCase):
     def setUp(self):
         Play.objects.bulk_create([
@@ -395,4 +408,16 @@ class TestMMViews(TestCase):
                     {'title':"As a decrepit father takes delight",'style':'Sonnet'}
             ]}
         ]);
+
+
+    def test_url_endpoint(self):
+        """
+        DRF 3.3 broke the MultipleModelAPIView with a get_queryset call
+        This test is to replicate (and then fix) that problem
+        """
+
+        client = APIClient()
+        response = client.get('/',format='api')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 

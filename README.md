@@ -258,6 +258,8 @@ If you want to combine `MultipleModelAPIView`'s `list()` function with other vie
 
 # Version Notes
 
+* 1.2 -- Fixed a bug with the Browsable API when using Django Rest Framework >= 3.3
+
 * 1.1 -- Added `get_queryList()` function to support creation of dynamic queryLists
 
 * 1.0 -- initial release
