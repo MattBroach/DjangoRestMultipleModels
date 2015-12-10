@@ -1,4 +1,4 @@
-from rest_framework.response import Response 
+from rest_framework.response import Response
 
 from itertools import chain
 
@@ -63,14 +63,15 @@ class MultipleModelMixin(object):
             queryset = self.filter_queryset(pair[0])
 
             # Run the paired serializer
-            data = pair[1](queryset,many=True).data
+            context = self.get_serializer_context()
+            data = pair[1](queryset,many=True,context=context).data
 
             # Get the label, unless add_model_type is note set
             try:
                 label = pair[2]
             except IndexError:
                 if self.add_model_type:
-                    label = queryset.model.__name__.lower() 
+                    label = queryset.model.__name__.lower()
                 else:
                     label = None
 
@@ -80,7 +81,7 @@ class MultipleModelMixin(object):
                     if label:
                         datum.update({'type':label})
                     results.append(datum)
-            
+
             # Otherwise, group the data by Model/Queryset
             else:
                 if label:
@@ -89,12 +90,10 @@ class MultipleModelMixin(object):
                 results.append(data)
 
 
-                
+
         # Sort by given attribute, if sorting_attribute is provided
         if self.sorting_field and self.flat:
             results = sorted(results, key=lambda datum: datum[self.sorting_field])
 
 
         return Response(results)
-
-

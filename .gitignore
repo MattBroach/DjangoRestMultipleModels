@@ -21,7 +21,6 @@ ghostdriver.log
 # Packaging info #
 ##################
 MANIFEST.in
-*.rst
 dist/
 django_rest_multiple_models.egg-info/
 
