@@ -1,8 +1,8 @@
 import os
 from setuptools import setup
 
-# with open(os.path.join(os.path.dirname(__file__), 'PYPI_README.rst')) as readme:
-#     README = readme.read()
+ with open(os.path.join(os.path.dirname(__file__), 'PYPI_README.rst')) as readme:
+     README = readme.read()
 
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
@@ -14,7 +14,7 @@ setup(
     include_package_data=True,
     license='MIT License',
     description='Multiple model/queryset view (and mixin) for Django Rest Framework',
-    #long_description=README,
+    long_description=README,
     url='https://github.com/Axiologue/DjangoRestMultipleModels',
     author='Matt Broach',
     author_email='go.for.dover@gmail.com',
