@@ -83,22 +83,19 @@ class MultipleModelMixin(object):
             if self.flat:
                 for datum in data:
                     if label:
-                        datum.update({'type':label})
+                        datum.update({'type': label})
                     results.append(datum)
 
             # Otherwise, group the data by Model/Queryset
             else:
                 if label:
-                    data = { label: data }
+                    data = {label: data}
 
                 results.append(data)
-
-
 
         # Sort by given attribute, if sorting_attribute is provided
         if self.sorting_field and self.flat:
             results = sorted(results, key=lambda datum: datum[self.sorting_field])
-
 
         return Response(results)
 
