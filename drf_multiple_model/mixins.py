@@ -58,22 +58,26 @@ class MultipleModelMixin(object):
 
         # Iterate through the queryList, run each queryset and serialize the data
         results = []
-        for pair in queryList:
+        for query in queryList:
+            if not isinstance(query, Query):
+                query = Query.new_from_tuple(query)
             # Run the queryset through Django Rest Framework filters
-            queryset = self.filter_queryset(pair[0])
+            queryset = self.filter_queryset(query.queryset)
+
+            # If there is a user-defined filter, run that too.
+            if query.filter_fn is not None:
+                query.filter_fn(queryset, *args, **kwargs)
 
             # Run the paired serializer
             context = self.get_serializer_context()
-            data = pair[1](queryset,many=True,context=context).data
+            data = query.serializer(queryset, many=True, context=context).data
 
             # Get the label, unless add_model_type is note set
-            try:
-                label = pair[2]
-            except IndexError:
+            if query.label is not None:
+                label = query.label
+            else:
                 if self.add_model_type:
                     label = queryset.model.__name__.lower()
-                else:
-                    label = None
 
             # if flat=True, Organize the data in a flat manner
             if self.flat:
@@ -97,3 +101,21 @@ class MultipleModelMixin(object):
 
 
         return Response(results)
+
+
+class Query(object):
+    def __init__(self, queryset, serializer, filter_fn=None, label=None):
+        self.queryset = queryset
+        self.serializer = serializer
+        self.filter_fn = filter_fn
+        self.label = label
+
+    @classmethod
+    def new_from_tuple(cls, tuple_):
+        try:
+            queryset, serializer, label = tuple_
+        except IndexError:
+            queryset, serializer = tuple_
+            label = None
+        query = Query(queryset, serializer, label)
+        return query
