@@ -4,6 +4,7 @@ from itertools import chain
 
 from django.db import connection
 
+
 class MultipleModelMixin(object):
     """
     Create a list of objects from multiple models/serializers.
@@ -73,7 +74,7 @@ class MultipleModelMixin(object):
 
             # If there is a user-defined filter, run that too.
             if query.filter_fn is not None:
-                query.filter_fn(queryset, *args, **kwargs)
+                queryset = query.filter_fn(queryset, *args, **kwargs)
 
             # Run the paired serializer
             context = self.get_serializer_context()
