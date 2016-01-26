@@ -9,7 +9,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-rest-multiple-models',
-    version='1.4',
+    version='1.5',
     packages=['drf_multiple_model'],
     include_package_data=True,
     license='MIT License',

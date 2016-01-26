@@ -53,6 +53,13 @@ class MultipleModelMixin(object):
 
         return queryList
 
+    def paginate_queryList(self,queryList):
+        """
+        Wrapper for pagination function.
+        By default it just calls paginate_queryset, but can be overwritten for custom functionality
+        """
+        return self.paginate_queryset(queryList) 
+
     def list(self, request, *args, **kwargs):
         queryList = self.get_queryList()
 
@@ -73,6 +80,7 @@ class MultipleModelMixin(object):
             data = query.serializer(queryset, many=True, context=context).data
 
             # Get the label, unless add_model_type is note set
+            label = None
             if query.label is not None:
                 label = query.label
             else:
@@ -93,15 +101,21 @@ class MultipleModelMixin(object):
 
                 results.append(data)
 
-        # Sort by given attribute, if sorting_attribute is provided
-        if self.sorting_field and self.flat:
-            results = sorted(results, key=lambda datum: datum[self.sorting_field])
+        if self.flat:
+            # Sort by given attribute, if sorting_attribute is provided
+            if self.sorting_field:
+                results = sorted(results, key=lambda datum: datum[self.sorting_field])
+            
+            # Return paginated results if pagination is enabled
+            page = self.paginate_queryList(results)
+            if page is not None:
+                return self.get_paginated_response(page)
 
         return Response(results)
 
 
 class Query(object):
-    def __init__(self, queryset, serializer, filter_fn=None, label=None):
+    def __init__(self, queryset, serializer, label=None,filter_fn=None, ):
         self.queryset = queryset
         self.serializer = serializer
         self.filter_fn = filter_fn
@@ -111,7 +125,7 @@ class Query(object):
     def new_from_tuple(cls, tuple_):
         try:
             queryset, serializer, label = tuple_
-        except IndexError:
+        except ValueError:
             queryset, serializer = tuple_
             label = None
         query = Query(queryset, serializer, label)
