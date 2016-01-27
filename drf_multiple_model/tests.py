@@ -1,6 +1,8 @@
 from django.db import models
 from django.test import TestCase, override_settings
 from django.conf.urls import url
+import django.template.loader
+from django.template import TemplateDoesNotExist, Template
 
 from rest_framework import serializers, status, renderers, pagination
 from rest_framework.test import APIRequestFactory
@@ -129,11 +131,6 @@ class PageNumberPaginationView(MultipleModelAPIView):
     flat = True
     pagination_class = BasicPagination
 
-# Fake URL Patterns for running tests
-urlpatterns = [
-    url(r"^$",TestBrowsableAPIView.as_view()),
-]
-
 # Testing LinitOffsetPagination
 class LimitPagination(pagination.LimitOffsetPagination):
     default_limit = 5 
@@ -144,6 +141,21 @@ class LimitOffsetPaginationView(MultipleModelAPIView):
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
     flat = True
     pagination_class = LimitPagination
+
+# Testing TemplateHTMLRenderer view bug
+class HTMLRendererView(MultipleModelAPIView):
+    renderer_classes = ( renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
+
+    queryList = ((Play.objects.all(),PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    flat = True
+    template_name = 'test.html'
+
+# Fake URL Patterns for running tests
+urlpatterns = [
+    url(r"^$",TestBrowsableAPIView.as_view()),
+    url(r"^template$",HTMLRendererView.as_view()),
+]
 
 # Tests 
 @override_settings(ROOT_URLCONF=__name__)
@@ -189,7 +201,6 @@ class TestMMViews(TestCase):
             response = view(request).render()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
         self.assertEqual(len(response.data),2)
         self.assertEqual(response.data,[
             { 'play': [
@@ -441,7 +452,6 @@ class TestMMViews(TestCase):
 
         client = APIClient()
         response = client.get('/',format='api')
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_page_number_pagination(self):
@@ -514,3 +524,82 @@ class TestMMViews(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']),3)
+
+
+@override_settings(ROOT_URLCONF=__name__)
+class TestMMVHTMLRenderer(TestCase):
+    def setUp(self):
+        Play.objects.bulk_create([
+            Play(title='Romeo And Juliet',
+                 genre='Tragedy',
+                 year=1597),
+            Play(title="A Midsummer Night's Dream",
+                 genre='Comedy',
+                 year=1600),
+            Play(title='Julius Caesar',
+                 genre='Tragedy',
+                 year=1623),
+            Play(title='As You Like It',
+                 genre='Comedy',
+                 year=1623)
+        ])
+
+        Poem.objects.bulk_create([
+            Poem(title="Shall I compare thee to a summer's day?",
+                 style="Sonnet"),
+            Poem(title="As a decrepit father takes delight",
+                 style="Sonnet"),
+            Poem(title="A Lover's Complaint",
+                 style="Narrative")
+        ])
+
+
+        """
+        Monkeypatch get_template
+        Taken from DRF Tests
+        """
+        self.get_template = django.template.loader.get_template
+
+        def get_template(template_name, dirs=None):
+            if template_name == 'test.html':
+                return Template("<html>test: {{ data }}</html>")
+            raise TemplateDoesNotExist(template_name)
+
+        def select_template(template_name_list, dirs=None, using=None):
+            if template_name_list == ['test.html']:
+                return Template("<html>test: {{ data }}</html>")
+            raise TemplateDoesNotExist(template_name_list[0])
+
+        django.template.loader.get_template = get_template
+        django.template.loader.select_template = select_template
+
+
+    def tearDown(self):
+        """
+        Revert monkeypatching
+        """
+        django.template.loader.get_template = self.get_template
+
+    def test_html_renderer(self):
+        """ 
+        Testing bug in which results dict failed to be passed into template context
+        """
+
+        client = APIClient()
+        response = client.get('/template',{'format':'html'})
+ 
+        # test the data is formatted properly and shows up in the template
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('data',response.data)
+        self.assertContains(response, "Tragedy")
+        self.assertContains(response, "<html>")
+        self.assertContains(response, "decrepit")
+
+        # test that the JSONRenderer does NOT add the dictionary wrapper to the data
+        response = client.get('/template?format=json')
+
+        # test the data is formatted properly and shows up in the template
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn('data',response.data)
+        self.assertNotIn('<html>',response)
+
