@@ -185,6 +185,8 @@ would return:
 ]
 ```
 
+You can reverse the order using the attribute `sort_descending = True`.
+
 **WARNING:** the field chosen for ordering must be shared by all models/serializers in your queryList.  Any attempt to sort objects along non_shared fields with throw a `KeyError`.
 
 ### add_model_type

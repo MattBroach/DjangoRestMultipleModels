@@ -40,6 +40,9 @@ class MultipleModelMixin(object):
     # note that the attribute must by shared by ALL models
     sorting_field = None
 
+    # Sort order for sorting_field
+    sort_descending = False
+
     # Flag to append the particular django model being used to the data
     add_model_type = True
 
@@ -105,7 +108,7 @@ class MultipleModelMixin(object):
         if self.flat:
             # Sort by given attribute, if sorting_attribute is provided
             if self.sorting_field:
-                results = sorted(results, key=lambda datum: datum[self.sorting_field])
+                results = self.sort(results)
             
             # Return paginated results if pagination is enabled
             page = self.paginate_queryList(results)
@@ -116,6 +119,9 @@ class MultipleModelMixin(object):
             return Response({'data': results})
 
         return Response(results)
+
+    def sort(self, results):
+        return sorted(results, reverse=self.sort_descending, key=lambda datum: datum[self.sorting_field])
 
 
 class Query(object):
