@@ -185,7 +185,9 @@ would return:
 ]
 ```
 
-**WARNING:** the field chosen for ordering must be shared by all models/serializers in your queryList.  Any attempt to sort objects along non_shared fields with throw a `KeyError`.
+As with django field ordering, add '-' to the beginning of the field to enable reverse sorting.  Setting `sorting_field='-title'` would sort the title fields in __descending__ order.
+
+**WARNING:** the field chosen for ordering must be shared by all models/serializers in your queryList.  Any attempt to sort objects along non_shared fields will throw a `KeyError`.
 
 ### add_model_type
 
@@ -291,6 +293,8 @@ which would return:
 If you want to combine `MultipleModelAPIView`'s `list()` function with other views, you can use the included `MultipleModelMixin` instead.
 
 # Version Notes
+
+* 1.6 -- Incorporated and expanded on reverse sort implemented by @schweickism
 
 * 1.5 -- Added support for Django Rest Framework's pagination classes, custom filter functions (the latter thanks to @Symmetric), and some base refactoring
 

@@ -85,6 +85,13 @@ class OrderedFlatView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
 
+# Testing reverse sort
+class ReversedFlatView(MultipleModelAPIView):
+    flat = True
+    sorting_field = '-title'
+    queryList = ((Play.objects.all(),PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+
 # Testing incorrect sort
 class OrderedWrongView(MultipleModelAPIView):
     flat = True
@@ -349,6 +356,27 @@ class TestMMViews(TestCase):
             OrderedDict([('genre','Tragedy'),('title','Julius Caesar'),('year',1623),('type', 'play')]),
             OrderedDict([('genre','Tragedy'),('title','Romeo And Juliet'),('year',1597),('type', 'play')]),
             OrderedDict([('title',"Shall I compare thee to a summer's day?"),('style','Sonnet'),('type', 'poem')]),
+        ])
+
+    def test_reversed_ordered(self):
+        """
+        Adding the sorting_field attribute should order the flat items according to whatever field 
+        """
+
+        view = ReversedFlatView.as_view()
+
+        request = factory.get('/')
+        with self.assertNumQueries(2):
+            response = view(request).render()
+
+        self.assertEqual(len(response.data),6)
+        self.assertEqual(response.data,[
+            OrderedDict([('title',"Shall I compare thee to a summer's day?"),('style','Sonnet'),('type', 'poem')]),
+            OrderedDict([('genre','Tragedy'),('title','Romeo And Juliet'),('year',1597),('type', 'play')]),
+            OrderedDict([('genre','Tragedy'),('title','Julius Caesar'),('year',1623),('type', 'play')]),
+            OrderedDict([('title',"As a decrepit father takes delight"),('style','Sonnet'),('type', 'poem')]),
+            OrderedDict([('genre','Comedy'),('title','As You Like It'),('year',1623),('type', 'play')]),
+            OrderedDict([('genre','Comedy'),('title',"A Midsummer Night's Dream"),('year',1600),('type', 'play')]),
         ])
 
     def test_ordered_wrong_sorting(self):

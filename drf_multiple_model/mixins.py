@@ -105,7 +105,7 @@ class MultipleModelMixin(object):
         if self.flat:
             # Sort by given attribute, if sorting_attribute is provided
             if self.sorting_field:
-                results = sorted(results, key=lambda datum: datum[self.sorting_field])
+                results = self.queryList_sort(results)
             
             # Return paginated results if pagination is enabled
             page = self.paginate_queryList(results)
@@ -116,6 +116,19 @@ class MultipleModelMixin(object):
             return Response({'data': results})
 
         return Response(results)
+
+    # Sort based on the given sorting field property
+    def queryList_sort(self, results):
+        # determing if sort is ascending or descending based on the presence of '-' at the beginning of the
+        # sorting_field attribute
+        sorting_field = self.sorting_field
+        sort_descending = self.sorting_field[0] == '-'
+
+        # Remove the '-' if sort descending
+        if sort_descending:
+            sorting_field = sorting_field[1:len(sorting_field)]
+
+        return sorted(results, reverse=sort_descending, key=lambda datum: datum[sorting_field])
 
 
 class Query(object):
