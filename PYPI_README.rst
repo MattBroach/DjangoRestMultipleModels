@@ -32,4 +32,4 @@ Usage
 -----
 
 Documentation is on ReadTheDocs:
-https://django-rest-multiple-models.readthedocs.org/en/latest/
+https://django-rest-multiple-models.readthedocs.io/en/latest/

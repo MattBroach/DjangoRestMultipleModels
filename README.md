@@ -2,7 +2,7 @@
 
 [Django Rest Framework](https://github.com/tomchristie/django-rest-framework) provides some incredible tools for serializing data, but sometimes you need to combine many serializers and/or models into a single API call.  **drf-multiple-model** is an app designed to do just that.
 
-* Full Documentation: [https://django-rest-multiple-models.readthedocs.org/en/latest/](https://django-rest-multiple-models.readthedocs.org/en/latest/)
+* Full Documentation: [https://django-rest-multiple-models.readthedocs.org/en/latest/](https://django-rest-multiple-models.readthedocs.io/en/latest/)
 * Source Code: [https://github.com/Axiologue/DjangoRestMultipleModels](https://github.com/Axiologue/DjangoRestMultipleModels)
 * PyPI: [https://pypi.python.org/pypi/django-rest-multiple-models](https://pypi.python.org/pypi/django-rest-multiple-models)
 * License: MIT
