@@ -4,11 +4,12 @@ from django.conf.urls import url
 import django.template.loader
 from django.template import TemplateDoesNotExist, Template
 
-from rest_framework import serializers, status, renderers, pagination
+from rest_framework import serializers, status, renderers, pagination, filters
 from rest_framework.test import APIRequestFactory
 from rest_framework.test import APIClient
 
 from drf_multiple_model.views import MultipleModelAPIView
+from drf_multiple_model.mixins import Query
 
 from collections import OrderedDict
 
@@ -55,16 +56,19 @@ class BasicTestView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
 
+    
 class TestBrowsableAPIView(MultipleModelAPIView):
     renderer_classes = (renderers.BrowsableAPIRenderer,)
 
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
 
+
 # Testing label functionality
 class LabelTestView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer,'The Plays'),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer,'The Sonnets'))
+
 
 # For no label, set add_model_type to False
 class BasicNoLabelView(MultipleModelAPIView):
@@ -72,11 +76,13 @@ class BasicNoLabelView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
 
+
 # Testing flat, without labels
 class BasicFlatView(MultipleModelAPIView):
     flat = True
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+
 
 # Testing sort
 class OrderedFlatView(MultipleModelAPIView):
@@ -85,12 +91,14 @@ class OrderedFlatView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
 
+
 # Testing reverse sort
 class ReversedFlatView(MultipleModelAPIView):
     flat = True
     sorting_field = '-title'
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+
 
 # Testing incorrect sort
 class OrderedWrongView(MultipleModelAPIView):
@@ -99,6 +107,7 @@ class OrderedWrongView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
 
+
 # Testing No Label
 class FlatNoLabelView(MultipleModelAPIView):
     flat = True
@@ -106,15 +115,18 @@ class FlatNoLabelView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
 
+
 # Testing label functionality when flat
 class FlatLabelView(MultipleModelAPIView):
     flat = True
     queryList = ((Play.objects.all(),PlaySerializer,'Drama'),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer,'Poetry'))
 
+
 # Testing missing queryList
 class BrokenView(MultipleModelAPIView):
     pass
+
 
 # Testing get_queryList function
 class DynamicQueryView(MultipleModelAPIView):
@@ -126,11 +138,13 @@ class DynamicQueryView(MultipleModelAPIView):
 
         return queryList
 
+
 # Testing PageNumberPagination
 class BasicPagination(pagination.PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
     max_page_size = 10 
+
 
 class PageNumberPaginationView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer),
@@ -138,16 +152,19 @@ class PageNumberPaginationView(MultipleModelAPIView):
     flat = True
     pagination_class = BasicPagination
 
+
 # Testing LinitOffsetPagination
 class LimitPagination(pagination.LimitOffsetPagination):
     default_limit = 5 
     max_limit = 15
+
 
 class LimitOffsetPaginationView(MultipleModelAPIView):
     queryList = ((Play.objects.all(),PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
     flat = True
     pagination_class = LimitPagination
+
 
 # Testing TemplateHTMLRenderer view bug
 class HTMLRendererView(MultipleModelAPIView):
@@ -157,6 +174,25 @@ class HTMLRendererView(MultipleModelAPIView):
                  (Poem.objects.filter(style="Sonnet"),PoemSerializer))
     flat = True
     template_name = 'test.html'
+
+
+# Testing filter_fn
+def title_without_letter(queryset, request, *args, **kwargs):
+    letter_to_exclude = request.query_params['letter']
+    return queryset.exclude(title__icontains=letter_to_exclude)
+
+class FilterFnView(MultipleModelAPIView):
+    queryList = (Query(Play.objects.all(), PlaySerializer, filter_fn=title_without_letter),
+                 (Poem.objects.all(), PoemSerializer))
+
+
+# Testing Built-in DRF Filter
+class SearchFilterView(MultipleModelAPIView):
+    queryList = ((Play.objects.all(),PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('title',)
+
 
 # Fake URL Patterns for running tests
 urlpatterns = [
@@ -553,6 +589,67 @@ class TestMMViews(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']),3)
 
+    def test_filter_fn_view(self):
+        """
+        The filter function is useful if you want to apply filtering to one query
+        but not another (unlike adding view level filtering, which will filter all the
+        querysets), but that filtering can't be provided at the beginning (for example, it 
+        needs to access a query_param).  This is testing the filter_fn.
+        """
+
+        view = FilterFnView.as_view() 
+
+        request = factory.get('/', {'letter': 'o'})
+
+        with self.assertNumQueries(2):
+            response = view(request).render()
+
+        # Check that the plays have been filter to remove those with the letter 'o'
+        # But the poems haven't been affected
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data,[
+            {
+                'play': [
+                    {'title':"A Midsummer Night's Dream",'genre':'Comedy','year':1600},
+                    {'title':'Julius Caesar','genre':'Tragedy','year':1623},
+                ]
+            },
+            {
+                'poem': [
+                    {'title':"Shall I compare thee to a summer's day?",'style':'Sonnet'},
+                    {'title':"As a decrepit father takes delight",'style':'Sonnet'},
+                    {'title':"A Lover's Complaint",'style':'Narrative'} 
+                ]
+            }
+        ]);
+
+    def test_search_filter_view(self):
+        """
+        Tests use of built in DRF filtering with MultipleModelAPIView
+        """
+        
+        view = SearchFilterView.as_view() 
+
+        request = factory.get('/', {'search': 'as'})
+
+        with self.assertNumQueries(2):
+            response = view(request).render()
+
+        # Check first page of results
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data,[
+            {
+                'play': [
+                    {'title':'As You Like It','genre':'Comedy','year':1623},
+                    ]
+            },
+            {
+                'poem': [
+                    {'title':"As a decrepit father takes delight",'style':'Sonnet'},
+                ]
+            }
+        ]);
+
 
 @override_settings(ROOT_URLCONF=__name__)
 class TestMMVHTMLRenderer(TestCase):
@@ -602,12 +699,6 @@ class TestMMVHTMLRenderer(TestCase):
         django.template.loader.select_template = select_template
 
 
-    def tearDown(self):
-        """
-        Revert monkeypatching
-        """
-        django.template.loader.get_template = self.get_template
-
     def test_html_renderer(self):
         """ 
         Testing bug in which results dict failed to be passed into template context
@@ -631,3 +722,9 @@ class TestMMVHTMLRenderer(TestCase):
         self.assertNotIn('data',response.data)
         self.assertNotIn('<html>',response)
 
+    def tearDown(self):
+        """
+        Revert monkeypatching
+        """
+        django.template.loader.get_template = self.get_template
+    

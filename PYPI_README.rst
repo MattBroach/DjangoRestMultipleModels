@@ -31,6 +31,5 @@ from drf_multiple_model.views import MultipleModelAPIView
 Usage
 -----
 
-See the included README.md or check out the documentation on Github:
-https://github.com/Axiologue/DjangoRestMultipleModels
-
+Documentation is on ReadTheDocs:
+https://django-rest-multiple-models.readthedocs.org/en/latest/

@@ -33,3 +33,7 @@ testproj/
 manage.py
 *swp
 db.sqlite3
+
+# Docs #
+########
+docs/_build/

@@ -71,36 +71,16 @@ class MultipleModelMixin(object):
                 query = Query.new_from_tuple(query)
             # Run the queryset through Django Rest Framework filters
             queryset = self.filter_queryset(query.queryset)
-
+            
             # If there is a user-defined filter, run that too.
             if query.filter_fn is not None:
-                queryset = query.filter_fn(queryset, *args, **kwargs)
+                queryset = query.filter_fn(queryset, request, *args, **kwargs)
 
             # Run the paired serializer
             context = self.get_serializer_context()
             data = query.serializer(queryset, many=True, context=context).data
 
-            # Get the label, unless add_model_type is note set
-            label = None
-            if query.label is not None:
-                label = query.label
-            else:
-                if self.add_model_type:
-                    label = queryset.model.__name__.lower()
-
-            # if flat=True, Organize the data in a flat manner
-            if self.flat:
-                for datum in data:
-                    if label:
-                        datum.update({'type': label})
-                    results.append(datum)
-
-            # Otherwise, group the data by Model/Queryset
-            else:
-                if label:
-                    data = {label: data}
-
-                results.append(data)
+            results = self.format_data(data, query, results)
 
         if self.flat:
             # Sort by given attribute, if sorting_attribute is provided
@@ -116,6 +96,33 @@ class MultipleModelMixin(object):
             return Response({'data': results})
 
         return Response(results)
+
+    # formats the serialized data based on various view properties (e.g. flat=True)
+    def format_data(self, new_data, query, previous_results):
+        # Get the label, unless add_model_type is note set
+        label = None
+        if query.label is not None:
+            label = query.label
+        else:
+            if self.add_model_type:
+                label = query.queryset.model.__name__.lower()
+
+        # if flat=True, Organize the data in a flat manner
+        if self.flat:
+            for datum in new_data:
+                if label:
+                    datum.update({'type': label})
+                previous_results.append(datum)
+
+        # Otherwise, group the data by Model/Queryset
+        else:
+            if label:
+                new_data = {label: new_data}
+
+            previous_results.append(new_data)
+
+        return previous_results
+
 
     # Sort based on the given sorting field property
     def queryList_sort(self, results):
