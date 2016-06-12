@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/Axiologue/DjangoRestMultipleModels.svg?branch=master)](https://travis-ci.org/Axiologue/DjangoRestMultipleModels)
+[![Coverage Status](https://coveralls.io/repos/github/Axiologue/DjangoRestMultipleModels/badge.svg?branch=master)](https://coveralls.io/github/Axiologue/DjangoRestMultipleModels?branch=master)
+[![PyPI version](https://badge.fury.io/py/django-rest-multiple-models.svg)](https://badge.fury.io/py/django-rest-multiple-models)
+
 # Multiple Model View
 
 [Django Rest Framework](https://github.com/tomchristie/django-rest-framework) provides some incredible tools for serializing data, but sometimes you need to combine many serializers and/or models into a single API call.  **drf-multiple-model** is an app designed to do just that.

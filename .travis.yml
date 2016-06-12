@@ -9,7 +9,7 @@ env:
    - DJANGO="Django<1.9"
    - DJANGO="Django<1.10"
 install:
- - pip install "$DJANGO" coverage djangorestframework
+ - pip install "$DJANGO" coverage coveralls djangorestframework
  - pip install .
 matrix:
   exclude:
