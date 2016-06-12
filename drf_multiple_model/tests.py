@@ -41,86 +41,86 @@ class Poem(models.Model):
 class PlaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Play
-        fields = ('genre','title','year')
+        fields = ('genre', 'title', 'year')
 
 class PoemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poem
-        fields = ('title','style')
+        fields = ('title', 'style')
 
 
 # Views
 
 # For testing that the default settings behave normally
 class BasicTestView(MultipleModelAPIView):
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
     
 class TestBrowsableAPIView(MultipleModelAPIView):
-    renderer_classes = (renderers.BrowsableAPIRenderer,)
+    renderer_classes = (renderers.BrowsableAPIRenderer, )
 
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing label functionality
 class LabelTestView(MultipleModelAPIView):
-    queryList = ((Play.objects.all(),PlaySerializer,'The Plays'),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer,'The Sonnets'))
+    queryList = ((Play.objects.all(), PlaySerializer, 'The Plays'),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer, 'The Sonnets'))
 
 
 # For no label, set add_model_type to False
 class BasicNoLabelView(MultipleModelAPIView):
     add_model_type = False
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing flat, without labels
 class BasicFlatView(MultipleModelAPIView):
     flat = True
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing sort
 class OrderedFlatView(MultipleModelAPIView):
     flat = True
     sorting_field = 'title'
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing reverse sort
 class ReversedFlatView(MultipleModelAPIView):
     flat = True
     sorting_field = '-title'
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing incorrect sort
 class OrderedWrongView(MultipleModelAPIView):
     flat = True
     sorting_field = 'year'
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing No Label
 class FlatNoLabelView(MultipleModelAPIView):
     flat = True
     add_model_type = False
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing label functionality when flat
 class FlatLabelView(MultipleModelAPIView):
     flat = True
-    queryList = ((Play.objects.all(),PlaySerializer,'Drama'),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer,'Poetry'))
+    queryList = ((Play.objects.all(), PlaySerializer, 'Drama'),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer, 'Poetry'))
 
 
 # Testing missing queryList
@@ -131,10 +131,10 @@ class BrokenView(MultipleModelAPIView):
 # Testing get_queryList function
 class DynamicQueryView(MultipleModelAPIView):
     def get_queryList(self):
-        title = self.kwargs['play'].replace('-',' ')
+        title = self.kwargs['play'].replace('-', ' ')
 
-        queryList = ((Play.objects.filter(title=title),PlaySerializer),
-                     (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+        queryList = ((Play.objects.filter(title=title), PlaySerializer),
+                     (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
         return queryList
 
@@ -147,8 +147,8 @@ class BasicPagination(pagination.PageNumberPagination):
 
 
 class PageNumberPaginationView(MultipleModelAPIView):
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
     flat = True
     pagination_class = BasicPagination
 
@@ -160,8 +160,8 @@ class LimitPagination(pagination.LimitOffsetPagination):
 
 
 class LimitOffsetPaginationView(MultipleModelAPIView):
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
     flat = True
     pagination_class = LimitPagination
 
@@ -170,8 +170,8 @@ class LimitOffsetPaginationView(MultipleModelAPIView):
 class HTMLRendererView(MultipleModelAPIView):
     renderer_classes = ( renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
 
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
     flat = True
     template_name = 'test.html'
 
@@ -188,16 +188,16 @@ class FilterFnView(MultipleModelAPIView):
 
 # Testing Built-in DRF Filter
 class SearchFilterView(MultipleModelAPIView):
-    queryList = ((Play.objects.all(),PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"),PoemSerializer))
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('title',)
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
+    filter_backends = (filters.SearchFilter, )
+    search_fields = ('title', )
 
 
 # Fake URL Patterns for running tests
 urlpatterns = [
-    url(r"^$",TestBrowsableAPIView.as_view()),
-    url(r"^template$",HTMLRendererView.as_view()),
+    url(r"^$", TestBrowsableAPIView.as_view()),
+    url(r"^template$", HTMLRendererView.as_view()),
 ]
 
 # Tests 
@@ -244,20 +244,20 @@ class TestMMViews(TestCase):
             response = view(request).render()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data),2)
-        self.assertEqual(response.data,[
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data, [
             { 'play': [
-                    {'title':'Romeo And Juliet','genre':'Tragedy','year':1597},
-                    {'title':"A Midsummer Night's Dream",'genre':'Comedy','year':1600},
-                    {'title':'Julius Caesar','genre':'Tragedy','year':1623},
-                    {'title':'As You Like It','genre':'Comedy','year':1623},
+                    {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
+                    {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
+                    {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+                    {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
                 ]
             },
             { 'poem': [
-                    {'title':"Shall I compare thee to a summer's day?",'style':'Sonnet'},
-                    {'title':"As a decrepit father takes delight",'style':'Sonnet'}
+                    {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                    {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
             ]}
-        ]);
+        ])
 
 
     def test_post(self):
@@ -267,7 +267,7 @@ class TestMMViews(TestCase):
         view = BasicTestView.as_view()
 
         data = {'fake': 'data'}
-        request = factory.post('/',data,format='json')
+        request = factory.post('/', data, format='json')
 
         with self.assertNumQueries(0):
             response = view(request).render()
@@ -282,7 +282,7 @@ class TestMMViews(TestCase):
         view = BasicTestView.as_view()
 
         data = {'fake': 'data'}
-        request = factory.put('/',data,format='json')
+        request = factory.put('/', data, format='json')
 
         with self.assertNumQueries(0):
             response = view(request).render()
@@ -318,19 +318,19 @@ class TestMMViews(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        self.assertEqual(len(response.data),2)
-        self.assertEqual(response.data,[
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data, [
             [
-                {'title':'Romeo And Juliet','genre':'Tragedy','year':1597},
-                {'title':"A Midsummer Night's Dream",'genre':'Comedy','year':1600},
-                {'title':'Julius Caesar','genre':'Tragedy','year':1623},
-                {'title':'As You Like It','genre':'Comedy','year':1623},
+                {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
+                {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
+                {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+                {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
             ],
             [
-                {'title':"Shall I compare thee to a summer's day?",'style':'Sonnet'},
-                {'title':"As a decrepit father takes delight",'style':'Sonnet'}
+                {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
             ]
-        ]);
+        ])
         
     def test_new_labels(self):
         """
@@ -346,9 +346,9 @@ class TestMMViews(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(len(response.data),2)
-        self.assertIn('The Plays',response.data[0].keys())
-        self.assertIn('The Sonnets',response.data[1].keys())
+        self.assertEqual(len(response.data), 2)
+        self.assertIn('The Plays', response.data[0].keys())
+        self.assertIn('The Sonnets', response.data[1].keys())
 
     def test_simple_flat(self):
         """
@@ -363,14 +363,14 @@ class TestMMViews(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(len(response.data),6)
-        self.assertEqual(response.data,[
-            OrderedDict([('genre','Tragedy'),('title','Romeo And Juliet'),('year',1597),('type', 'play')]),
-            OrderedDict([('genre','Comedy'),('title',"A Midsummer Night's Dream"),('year',1600),('type', 'play')]),
-            OrderedDict([('genre','Tragedy'),('title','Julius Caesar'),('year',1623),('type', 'play')]),
-            OrderedDict([('genre','Comedy'),('title','As You Like It'),('year',1623),('type', 'play')]),
-            OrderedDict([('title',"Shall I compare thee to a summer's day?"),('style','Sonnet'),('type', 'poem')]),
-            OrderedDict([('title',"As a decrepit father takes delight"),('style','Sonnet'),('type', 'poem')]),
+        self.assertEqual(len(response.data), 6)
+        self.assertEqual(response.data, [
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597), ('type', 'play')]),
+            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600), ('type', 'play')]),
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623), ('type', 'play')]),
+            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623), ('type', 'play')]),
+            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet'), ('type', 'poem')]),
+            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet'), ('type', 'poem')]),
         ])
 
     def test_ordered_flat(self):
@@ -384,14 +384,14 @@ class TestMMViews(TestCase):
         with self.assertNumQueries(2):
             response = view(request).render()
 
-        self.assertEqual(len(response.data),6)
-        self.assertEqual(response.data,[
-            OrderedDict([('genre','Comedy'),('title',"A Midsummer Night's Dream"),('year',1600),('type', 'play')]),
-            OrderedDict([('genre','Comedy'),('title','As You Like It'),('year',1623),('type', 'play')]),
-            OrderedDict([('title',"As a decrepit father takes delight"),('style','Sonnet'),('type', 'poem')]),
-            OrderedDict([('genre','Tragedy'),('title','Julius Caesar'),('year',1623),('type', 'play')]),
-            OrderedDict([('genre','Tragedy'),('title','Romeo And Juliet'),('year',1597),('type', 'play')]),
-            OrderedDict([('title',"Shall I compare thee to a summer's day?"),('style','Sonnet'),('type', 'poem')]),
+        self.assertEqual(len(response.data), 6)
+        self.assertEqual(response.data, [
+            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600), ('type', 'play')]),
+            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623), ('type', 'play')]),
+            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet'), ('type', 'poem')]),
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623), ('type', 'play')]),
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597), ('type', 'play')]),
+            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet'), ('type', 'poem')]),
         ])
 
     def test_reversed_ordered(self):
@@ -405,14 +405,14 @@ class TestMMViews(TestCase):
         with self.assertNumQueries(2):
             response = view(request).render()
 
-        self.assertEqual(len(response.data),6)
-        self.assertEqual(response.data,[
-            OrderedDict([('title',"Shall I compare thee to a summer's day?"),('style','Sonnet'),('type', 'poem')]),
-            OrderedDict([('genre','Tragedy'),('title','Romeo And Juliet'),('year',1597),('type', 'play')]),
-            OrderedDict([('genre','Tragedy'),('title','Julius Caesar'),('year',1623),('type', 'play')]),
-            OrderedDict([('title',"As a decrepit father takes delight"),('style','Sonnet'),('type', 'poem')]),
-            OrderedDict([('genre','Comedy'),('title','As You Like It'),('year',1623),('type', 'play')]),
-            OrderedDict([('genre','Comedy'),('title',"A Midsummer Night's Dream"),('year',1600),('type', 'play')]),
+        self.assertEqual(len(response.data), 6)
+        self.assertEqual(response.data, [
+            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet'), ('type', 'poem')]),
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597), ('type', 'play')]),
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623), ('type', 'play')]),
+            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet'), ('type', 'poem')]),
+            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623), ('type', 'play')]),
+            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600), ('type', 'play')]),
         ])
 
     def test_ordered_wrong_sorting(self):
@@ -423,7 +423,7 @@ class TestMMViews(TestCase):
         view = OrderedWrongView.as_view()
 
         request = factory.get('/')
-        self.assertRaises(KeyError,view,request)
+        self.assertRaises(KeyError, view, request)
 
     def test_flat_no_label(self):
         """
@@ -438,14 +438,14 @@ class TestMMViews(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(len(response.data),6)
-        self.assertEqual(response.data,[
-            OrderedDict([('genre','Tragedy'),('title','Romeo And Juliet'),('year',1597)]),
-            OrderedDict([('genre','Comedy'),('title',"A Midsummer Night's Dream"),('year',1600)]),
-            OrderedDict([('genre','Tragedy'),('title','Julius Caesar'),('year',1623)]),
-            OrderedDict([('genre','Comedy'),('title','As You Like It'),('year',1623)]),
-            OrderedDict([('title',"Shall I compare thee to a summer's day?"),('style','Sonnet')]),
-            OrderedDict([('title',"As a decrepit father takes delight"),('style','Sonnet')]),
+        self.assertEqual(len(response.data), 6)
+        self.assertEqual(response.data, [
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597)]),
+            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600)]),
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623)]),
+            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623)]),
+            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet')]),
+            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet')]),
         ])
 
     def test_flat_custom_labels(self):
@@ -461,14 +461,14 @@ class TestMMViews(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(len(response.data),6)
-        self.assertEqual(response.data,[
-            OrderedDict([('genre','Tragedy'),('title','Romeo And Juliet'),('year',1597),('type', 'Drama')]),
-            OrderedDict([('genre','Comedy'),('title',"A Midsummer Night's Dream"),('year',1600),('type', 'Drama')]),
-            OrderedDict([('genre','Tragedy'),('title','Julius Caesar'),('year',1623),('type', 'Drama')]),
-            OrderedDict([('genre','Comedy'),('title','As You Like It'),('year',1623),('type', 'Drama')]),
-            OrderedDict([('title',"Shall I compare thee to a summer's day?"),('style','Sonnet'),('type', 'Poetry')]),
-            OrderedDict([('title',"As a decrepit father takes delight"),('style','Sonnet'),('type', 'Poetry')]),
+        self.assertEqual(len(response.data), 6)
+        self.assertEqual(response.data, [
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597), ('type', 'Drama')]),
+            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600), ('type', 'Drama')]),
+            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623), ('type', 'Drama')]),
+            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623), ('type', 'Drama')]),
+            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet'), ('type', 'Poetry')]),
+            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet'), ('type', 'Poetry')]),
         ])
 
     def test_missing_queryList(self):
@@ -480,7 +480,7 @@ class TestMMViews(TestCase):
 
         request = factory.get('/')
 
-        self.assertRaises(AssertionError,view,request)
+        self.assertRaises(AssertionError, view, request)
 
     def test_dynamic_queryList(self):
         """
@@ -491,21 +491,21 @@ class TestMMViews(TestCase):
 
         request = factory.get('/Julius-Caesar')
         with self.assertNumQueries(2):
-            response = view(request,play="Julius-Caesar")
+            response = view(request, play="Julius-Caesar")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(len(response.data),2)
-        self.assertEqual(response.data,[
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data, [
             { 'play': [
-                    {'title':'Julius Caesar','genre':'Tragedy','year':1623},
+                    {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
                 ]
             },
             { 'poem': [
-                    {'title':"Shall I compare thee to a summer's day?",'style':'Sonnet'},
-                    {'title':"As a decrepit father takes delight",'style':'Sonnet'}
+                    {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                    {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
             ]}
-        ]);
+        ])
 
 
     def test_url_endpoint(self):
@@ -515,7 +515,7 @@ class TestMMViews(TestCase):
         """
 
         client = APIClient()
-        response = client.get('/',format='api')
+        response = client.get('/', format='api')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_page_number_pagination(self):
@@ -533,24 +533,24 @@ class TestMMViews(TestCase):
 
         # Check first page of results
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['count'],6)
-        self.assertEqual(response.data['previous'],None)
-        self.assertEqual(response.data['next'],'http://testserver/?page=2')
-        self.assertEqual(len(response.data['results']),5)
+        self.assertEqual(response.data['count'], 6)
+        self.assertEqual(response.data['previous'], None)
+        self.assertEqual(response.data['next'], 'http://testserver/?page=2')
+        self.assertEqual(len(response.data['results']), 5)
 
         # Check second page of results
-        request = factory.get('/',{'page': 2})
+        request = factory.get('/', {'page': 2})
         response = view(request).render()
 
-        self.assertEqual(response.status_code,status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']),1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
 
         # Check change max size 
-        request = factory.get('/',{'page_size': 3})
+        request = factory.get('/', {'page_size': 3})
         response = view(request).render()
 
-        self.assertEqual(response.status_code,status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']),3)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 3)
 
     def test_limit_offset_pagination(self):
         """
@@ -567,27 +567,27 @@ class TestMMViews(TestCase):
 
         # Check first page of results
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['previous'],None)
-        self.assertEqual(response.data['next'],'http://testserver/?limit=5&offset=5')
-        self.assertEqual(response.data['count'],6)
-        self.assertEqual(len(response.data['results']),5)
+        self.assertEqual(response.data['previous'], None)
+        self.assertEqual(response.data['next'], 'http://testserver/?limit=5&offset=5')
+        self.assertEqual(response.data['count'], 6)
+        self.assertEqual(len(response.data['results']), 5)
 
         # Check second page of results
-        request = factory.get('/',{'offset': 5})
+        request = factory.get('/', {'offset': 5})
         response = view(request).render()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['previous'],'http://testserver/?limit=5')
-        self.assertEqual(response.data['next'],None)
-        self.assertEqual(response.data['count'],6)
-        self.assertEqual(len(response.data['results']),1)
+        self.assertEqual(response.data['previous'], 'http://testserver/?limit=5')
+        self.assertEqual(response.data['next'], None)
+        self.assertEqual(response.data['count'], 6)
+        self.assertEqual(len(response.data['results']), 1)
 
         # Check manually set limits
-        request = factory.get('/',{'limit': 3})
+        request = factory.get('/', {'limit': 3})
         response = view(request).render()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']),3)
+        self.assertEqual(len(response.data['results']), 3)
 
     def test_filter_fn_view(self):
         """
@@ -607,21 +607,21 @@ class TestMMViews(TestCase):
         # Check that the plays have been filter to remove those with the letter 'o'
         # But the poems haven't been affected
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data,[
+        self.assertEqual(response.data, [
             {
                 'play': [
-                    {'title':"A Midsummer Night's Dream",'genre':'Comedy','year':1600},
-                    {'title':'Julius Caesar','genre':'Tragedy','year':1623},
+                    {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
+                    {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
                 ]
             },
             {
                 'poem': [
-                    {'title':"Shall I compare thee to a summer's day?",'style':'Sonnet'},
-                    {'title':"As a decrepit father takes delight",'style':'Sonnet'},
-                    {'title':"A Lover's Complaint",'style':'Narrative'} 
+                    {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                    {'title': "As a decrepit father takes delight", 'style': 'Sonnet'},
+                    {'title': "A Lover's Complaint", 'style': 'Narrative'} 
                 ]
             }
-        ]);
+        ])
 
     def test_search_filter_view(self):
         """
@@ -637,18 +637,18 @@ class TestMMViews(TestCase):
 
         # Check first page of results
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data,[
+        self.assertEqual(response.data, [
             {
                 'play': [
-                    {'title':'As You Like It','genre':'Comedy','year':1623},
+                    {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
                     ]
             },
             {
                 'poem': [
-                    {'title':"As a decrepit father takes delight",'style':'Sonnet'},
+                    {'title': "As a decrepit father takes delight", 'style': 'Sonnet'},
                 ]
             }
-        ]);
+        ])
 
 
 @override_settings(ROOT_URLCONF=__name__)
@@ -705,11 +705,11 @@ class TestMMVHTMLRenderer(TestCase):
         """
 
         client = APIClient()
-        response = client.get('/template',{'format':'html'})
+        response = client.get('/template', {'format': 'html'})
  
         # test the data is formatted properly and shows up in the template
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('data',response.data)
+        self.assertIn('data', response.data)
         self.assertContains(response, "Tragedy")
         self.assertContains(response, "<html>")
         self.assertContains(response, "decrepit")
@@ -719,12 +719,11 @@ class TestMMVHTMLRenderer(TestCase):
 
         # test the data is formatted properly and shows up in the template
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertNotIn('data',response.data)
-        self.assertNotIn('<html>',response)
+        self.assertNotIn('data', response.data)
+        self.assertNotIn('<html>', response)
 
     def tearDown(self):
         """
         Revert monkeypatching
         """
         django.template.loader.get_template = self.get_template
-    

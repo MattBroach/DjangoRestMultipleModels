@@ -1,9 +1,5 @@
 from rest_framework.response import Response
 
-from itertools import chain
-
-from django.db import connection
-
 
 class MultipleModelMixin(object):
     """
@@ -19,8 +15,8 @@ class MultipleModelMixin(object):
             .....
     ]
 
-    optionally, you can add a third element to the queryList, a label to define that particular
-    data type:
+    optionally, you can add a third element to the queryList,
+    a label to define that particular data type:
 
     queryList = [
             (querysetA,serializerA,'labelA'),
@@ -54,17 +50,18 @@ class MultipleModelMixin(object):
 
         return queryList
 
-    def paginate_queryList(self,queryList):
+    def paginate_queryList(self, queryList):
         """
         Wrapper for pagination function.
-        By default it just calls paginate_queryset, but can be overwritten for custom functionality
+        By default it just calls paginate_queryset,
+        but can be overwritten for custom functionality
         """
-        return self.paginate_queryset(queryList) 
+        return self.paginate_queryset(queryList)
 
     def list(self, request, *args, **kwargs):
         queryList = self.get_queryList()
 
-        # Iterate through the queryList, run each queryset and serialize the data
+        # Iterate through queryList, run each queryset and serialize the data
         results = []
         for query in queryList:
             if not isinstance(query, Query):
@@ -72,7 +69,7 @@ class MultipleModelMixin(object):
             # Run the queryset through Django Rest Framework filters
             queryset = query.queryset.all()
             queryset = self.filter_queryset(queryset)
-            
+
             # If there is a user-defined filter, run that too.
             if query.filter_fn is not None:
                 queryset = query.filter_fn(queryset, request, *args, **kwargs)
@@ -87,7 +84,7 @@ class MultipleModelMixin(object):
             # Sort by given attribute, if sorting_attribute is provided
             if self.sorting_field:
                 results = self.queryList_sort(results)
-            
+
             # Return paginated results if pagination is enabled
             page = self.paginate_queryList(results)
             if page is not None:
@@ -98,7 +95,7 @@ class MultipleModelMixin(object):
 
         return Response(results)
 
-    # formats the serialized data based on various view properties (e.g. flat=True)
+    # formats the serialized data based on various view properties
     def format_data(self, new_data, query, previous_results):
         # Get the label, unless add_model_type is note set
         label = None
@@ -124,11 +121,13 @@ class MultipleModelMixin(object):
 
         return previous_results
 
-
     # Sort based on the given sorting field property
     def queryList_sort(self, results):
-        # determing if sort is ascending or descending based on the presence of '-' at the beginning of the
-        # sorting_field attribute
+        """
+        determing if sort is ascending or descending
+        based on the presence of '-' at the beginning of the
+        sorting_field attribute
+        """
         sorting_field = self.sorting_field
         sort_descending = self.sorting_field[0] == '-'
 
@@ -136,11 +135,15 @@ class MultipleModelMixin(object):
         if sort_descending:
             sorting_field = sorting_field[1:len(sorting_field)]
 
-        return sorted(results, reverse=sort_descending, key=lambda datum: datum[sorting_field])
+        return sorted(
+            results,
+            reverse=sort_descending,
+            key=lambda datum: datum[sorting_field]
+        )
 
 
 class Query(object):
-    def __init__(self, queryset, serializer, label=None,filter_fn=None, ):
+    def __init__(self, queryset, serializer, label=None, filter_fn=None, ):
         self.queryset = queryset
         self.serializer = serializer
         self.filter_fn = filter_fn
