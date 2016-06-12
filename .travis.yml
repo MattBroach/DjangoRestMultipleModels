@@ -21,7 +21,7 @@ branches:
  only:
   - master
 script:
-  - coverage run manage.py test
+  - coverage run manage.py test drf_multiple_model
 after_success:
   - coverage report
   - coveralls
