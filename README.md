@@ -32,6 +32,16 @@ from drf_multiple_model.views import MultipleModelAPIView
 
 **Note:** This package is built on top of Django Rest Framework's generic views and serializers, so it presupposes that Django Rest Framework is installed and added to your project as well.
 
+# Features
+
+* Send multiple serialized models as separate arrays or one merged list
+* Sort different serialized models using shared fields
+* pagination (sort of)
+* Filtering -- either per queryset or on all queryset
+* custom model labeling
+
+For full configuration options, filtering tools, and more, see [the documentation](https://django-rest-multiple-models.readthedocs.org/en/latest/).
+
 # Basic Usage
 
 **drf-multiple-model** comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tutple of queryset/serializer pairs (in that order).  For example, let's say you have the following models and serializers:
@@ -96,4 +106,3 @@ which would return:
 ]
 ```
 
-For configuration options, filtering tools, and more, see [the documentation](https://django-rest-multiple-models.readthedocs.org/en/latest/).

@@ -70,7 +70,8 @@ class MultipleModelMixin(object):
             if not isinstance(query, Query):
                 query = Query.new_from_tuple(query)
             # Run the queryset through Django Rest Framework filters
-            queryset = self.filter_queryset(query.queryset)
+            queryset = query.queryset.all()
+            queryset = self.filter_queryset(queryset)
             
             # If there is a user-defined filter, run that too.
             if query.filter_fn is not None:
