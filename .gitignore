@@ -30,7 +30,6 @@ setup.sh
 Vagrantfile
 .vagrant/
 testproj/
-manage.py
 *swp
 db.sqlite3
 

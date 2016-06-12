@@ -19,7 +19,7 @@ branches:
  only:
   - master
 script:
-  - coverage run manage.py test allauth
+  - coverage run manage.py test
 after_success:
   - coverage report
   - coveralls
