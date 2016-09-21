@@ -16,7 +16,7 @@ class MultipleModelMixin(object):
     ]
 
     optionally, you can add a third element to the queryList,
-	a label to define that particular data type:
+    a label to define that particular data type:
 
     queryList = [
             (querysetA,serializerA,'labelA'),
@@ -26,6 +26,7 @@ class MultipleModelMixin(object):
     ]
 
     """
+
     objectify = False
 
     queryList = None
@@ -51,9 +52,10 @@ class MultipleModelMixin(object):
 
         return queryList
 
-    def paginate_queryList(self,queryList):
+    def paginate_queryList(self, queryList):
         """
         Wrapper for pagination function.
+
         By default it just calls paginate_queryset, but can be overwritten for custom functionality
         """
         return self.paginate_queryset(queryList)
