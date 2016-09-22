@@ -57,11 +57,8 @@ class BasicTestView(MultipleModelAPIView):
                  (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
     
-class TestBrowsableAPIView(MultipleModelAPIView):
+class TestBrowsableAPIView(BasicTestView):
     renderer_classes = (renderers.BrowsableAPIRenderer, )
-
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing label functionality
@@ -71,49 +68,33 @@ class LabelTestView(MultipleModelAPIView):
 
 
 # For no label, set add_model_type to False
-class BasicNoLabelView(MultipleModelAPIView):
+class BasicNoLabelView(BasicTestView):
     add_model_type = False
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing flat, without labels
-class BasicFlatView(MultipleModelAPIView):
+class BasicFlatView(BasicTestView):
     flat = True
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing sort
-class OrderedFlatView(MultipleModelAPIView):
-    flat = True
+class OrderedFlatView(BasicFlatView):
     sorting_field = 'title'
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing reverse sort
-class ReversedFlatView(MultipleModelAPIView):
-    flat = True
+class ReversedFlatView(BasicFlatView):
     sorting_field = '-title'
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing incorrect sort
-class OrderedWrongView(MultipleModelAPIView):
-    flat = True
+class OrderedWrongView(BasicFlatView):
     sorting_field = 'year'
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing No Label
-class FlatNoLabelView(MultipleModelAPIView):
-    flat = True
+class FlatNoLabelView(BasicFlatView):
     add_model_type = False
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
 
 # Testing label functionality when flat
@@ -146,10 +127,7 @@ class BasicPagination(pagination.PageNumberPagination):
     max_page_size = 10 
 
 
-class PageNumberPaginationView(MultipleModelAPIView):
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
-    flat = True
+class PageNumberPaginationView(BasicFlatView):
     pagination_class = BasicPagination
 
 
@@ -159,20 +137,13 @@ class LimitPagination(pagination.LimitOffsetPagination):
     max_limit = 15
 
 
-class LimitOffsetPaginationView(MultipleModelAPIView):
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
-    flat = True
+class LimitOffsetPaginationView(BasicFlatView):
     pagination_class = LimitPagination
 
 
 # Testing TemplateHTMLRenderer view bug
-class HTMLRendererView(MultipleModelAPIView):
-    renderer_classes = ( renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
-
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
-    flat = True
+class HTMLRendererView(BasicFlatView):
+    renderer_classes = (renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
     template_name = 'test.html'
 
 
@@ -187,9 +158,7 @@ class FilterFnView(MultipleModelAPIView):
 
 
 # Testing Built-in DRF Filter
-class SearchFilterView(MultipleModelAPIView):
-    queryList = ((Play.objects.all(), PlaySerializer),
-                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
+class SearchFilterView(BasicTestView):
     filter_backends = (filters.SearchFilter, )
     search_fields = ('title', )
 
@@ -697,7 +666,6 @@ class TestMMVHTMLRenderer(TestCase):
 
         django.template.loader.get_template = get_template
         django.template.loader.select_template = select_template
-
 
     def test_html_renderer(self):
         """ 
