@@ -17,6 +17,7 @@ Thumbs.db
 htmlcov/
 ghostdriver.log
 .coverage
+.tox/
 
 # Packaging info #
 ##################
@@ -32,6 +33,7 @@ Vagrantfile
 testproj/
 *swp
 db.sqlite3
+env/
 
 # Docs #
 ########

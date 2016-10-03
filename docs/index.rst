@@ -38,6 +38,7 @@ Contents:
    installation
    filtering
    pagination
+   viewsets
    release-notes
    acknowledgments 
 

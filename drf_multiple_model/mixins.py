@@ -63,10 +63,7 @@ class MultipleModelMixin(object):
     def list(self, request, *args, **kwargs):
         queryList = self.get_queryList()
 
-        if self.objectify:
-            results = {}
-        else:
-            results = []
+        results = {} if self.objectify else []
 
         # Iterate through the queryList, run each queryset and serialize the data
         for query in queryList:

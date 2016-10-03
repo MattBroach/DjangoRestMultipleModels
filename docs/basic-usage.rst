@@ -63,6 +63,37 @@ which would return::
 Configuration Options
 =====================
 
+Objectify
+---------
+
+When using the results of the ``MultipleModelAPIView``, it's often easier to parse the results as a JSON object rather than as an array.  To facilitate this, ``MultipleModelAPIView`` has the ``objectify`` property, which when set to ``True`` returns the results as an object.  For example, the following::
+
+    from drf_multiple_model.views import MultipleModelAPIView
+
+    class TextAPIView(MultipleModelAPIView):
+        objectify = True
+        queryList = [
+            (Play.objects.all(),PlaySerializer),
+            (Poem.objects.filter(style='Sonnet'),PoemSerializer),
+            ....
+        ]
+
+would return::
+    
+    {
+        'play' : [
+                {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'pages': 350},
+                {'genre': 'Tragedy', 'title': "Romeo and Juliet", 'pages': 300},
+                ....
+            ],
+        'poem' : [
+                {'title': 'Shall I compare thee to a summer's day?', 'stanzas': 1},
+                {'title': 'As a decrepit father takes delight', 'stanzas': 1},
+                ....
+            ],
+    }
+
+
 Labels
 ------
 

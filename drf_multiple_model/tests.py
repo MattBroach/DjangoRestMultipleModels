@@ -4,12 +4,14 @@ from django.conf.urls import url
 import django.template.loader
 from django.template import TemplateDoesNotExist, Template
 
-from rest_framework import serializers, status, renderers, pagination, filters
+from rest_framework import serializers, status, renderers, \
+        pagination, filters, routers
 from rest_framework.test import APIRequestFactory
 from rest_framework.test import APIClient
 
 from drf_multiple_model.views import MultipleModelAPIView
 from drf_multiple_model.mixins import Query
+from drf_multiple_model.viewsets import MultipleModelAPIViewSet
 
 from collections import OrderedDict
 
@@ -59,6 +61,12 @@ class BasicTestView(MultipleModelAPIView):
     
 class TestBrowsableAPIView(BasicTestView):
     renderer_classes = (renderers.BrowsableAPIRenderer, )
+
+
+# Testing the objectify property (should return a dict/object instead
+# of a list/array
+class AsObjectView(BasicTestView):
+    objectify = True
 
 
 # Testing label functionality
@@ -163,8 +171,20 @@ class SearchFilterView(BasicTestView):
     search_fields = ('title', )
 
 
+# Testing Base Viewset
+class BasicTestViewSet(MultipleModelAPIViewSet):
+    queryList = ((Play.objects.all(), PlaySerializer),
+                 (Poem.objects.filter(style="Sonnet"), PoemSerializer))
+
+
+# Routers for testing viewset
+router = routers.SimpleRouter()
+router.register(r'viewset', BasicTestViewSet, base_name='viewset')
+
+urlpatterns = router.urls
+
 # Fake URL Patterns for running tests
-urlpatterns = [
+urlpatterns += [
     url(r"^$", TestBrowsableAPIView.as_view()),
     url(r"^template$", HTMLRendererView.as_view()),
 ]
@@ -203,6 +223,7 @@ class TestMMViews(TestCase):
             flat = False
             sorting_field = None
             add_model_type = True
+            objectify = False
         """
 
         view = BasicTestView.as_view()
@@ -272,6 +293,34 @@ class TestMMViews(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(response.data, {"detail": 'Method "DELETE" not allowed.'})
+
+    def test_objectify(self):
+        """
+        Tests the 'objectify' property, which allows returning an object/dict
+        instead of a list/array
+        """
+
+        view = AsObjectView.as_view()
+        
+
+        request = factory.get('/')
+        with self.assertNumQueries(2):
+            response = view(request).render()
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, { 
+            'play': [
+                {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
+                {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
+                {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+                {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
+            ],
+            'poem': [
+                {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
+            ]
+        })
+
 
     def test_no_label(self):
         """
@@ -617,6 +666,29 @@ class TestMMViews(TestCase):
                     {'title': "As a decrepit father takes delight", 'style': 'Sonnet'},
                 ]
             }
+        ])
+
+    def test_base_viewset(self):
+        """
+        Tests the Base MutlipleModelAPIViewSet with the default settings
+        """
+        client = APIClient()
+        response = client.get('/viewset/', format='api')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data, [
+            { 'play': [
+                    {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
+                    {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
+                    {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+                    {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
+                ]
+            },
+            { 'poem': [
+                    {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                    {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
+            ]}
         ])
 
 
