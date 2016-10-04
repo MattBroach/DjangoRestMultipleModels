@@ -2,6 +2,14 @@
 Release Notes
 =============
 
+1.8 (2016-09-04)
+==============
+
+* Added ``objectify`` property to return JSON object instead of an array (implemented by @ELIYAHUT123)
+* Added ``MultipleModelAPIViewSet`` for working with Viewsets (credit to Mike Hwang (@mehwang) for working out the implementation)
+* implemented tox for simultaneous testing of all relevant python/django combos
+* dropped support for Django 1.7 (based on Django Rest Frameworks's concurrent lack of support)
+
 1.7 (2016-06-09)
 ===============
 

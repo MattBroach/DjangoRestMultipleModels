@@ -21,4 +21,4 @@ For user with ViewSets and Routers, **drf-multiple-model** provides the ``Multip
 
 **WARNING:** Because the MultipleModel views do not provide the ``queryset`` property, you **must** specify the ``base_name`` property when you register a ``MultipleModelAPIViewSet`` with a router. 
 
-The ``MultipleModelAPIViewSet`` has all the same configuration options as the ``MultipleModelAPIView`` object.  For more information, see the basic usage section. 
+The ``MultipleModelAPIViewSet`` has all the same configuration options as the ``MultipleModelAPIView`` object.  For more information, see the :doc:`basic usage <basic-usage>`  section. 

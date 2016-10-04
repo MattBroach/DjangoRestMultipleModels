@@ -38,10 +38,10 @@ from drf_multiple_model.views import MultipleModelAPIView
 
 # Features
 
-* Send multiple serialized models as separate arrays or one merged list
+* Send multiple serialized models as separate arrays, one merged list, or a single JSON object
 * Sort different serialized models using shared fields
 * pagination (sort of)
-* Filtering -- either per queryset or on all queryset
+* Filtering -- either per queryset or on all querysets
 * custom model labeling
 
 For full configuration options, filtering tools, and more, see [the documentation](https://django-rest-multiple-models.readthedocs.org/en/latest/).

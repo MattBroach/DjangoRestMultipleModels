@@ -2,7 +2,7 @@
 Contributors
 ============
 
-Project Maintainer and Fouder
+Project Maintainer and Founder
 =============================
 
 * Matt Nishi-Broach <matt@axiologue.org>
