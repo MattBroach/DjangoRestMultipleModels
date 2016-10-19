@@ -78,7 +78,7 @@ class MultipleModelMixin(object):
                 query = Query.new_from_tuple(query)
             # Run the queryset through Django Rest Framework filters
             queryset = self.filter_queryset(query.queryset)
-            
+
             # If there is a user-defined filter, run that too.
             if query.filter_fn is not None:
                 queryset = query.filter_fn(queryset, request, *args, **kwargs)
@@ -93,7 +93,7 @@ class MultipleModelMixin(object):
             # Sort by given attribute, if sorting_attribute is provided
             if self.sorting_field:
                 results = self.queryList_sort(results)
-            
+
             # Return paginated results if pagination is enabled
             page = self.paginate_queryList(results)
             if page is not None:
@@ -137,7 +137,6 @@ class MultipleModelMixin(object):
 
         return results
 
-
     # Sort based on the given sorting field property
     def queryList_sort(self, results):
         """
@@ -160,6 +159,7 @@ class MultipleModelMixin(object):
 
 
 class Query(object):
+
     def __init__(self, queryset, serializer, label=None, filter_fn=None, ):
         self.queryset = queryset
         self.serializer = serializer
