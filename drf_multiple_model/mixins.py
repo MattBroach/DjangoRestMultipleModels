@@ -49,8 +49,15 @@ class MultipleModelMixin(object):
         )
 
         queryList = self.queryList
+        qlist = []
+        for query in queryList:
+            if not isinstance(query, Query):
+                query = Query.new_from_tuple(query)
+            qs = query.queryset.all()
+            query.queryset = qs
+            qlist.append(query)
 
-        return queryList
+        return qlist
 
     def paginate_queryList(self, queryList):
         """
@@ -70,8 +77,7 @@ class MultipleModelMixin(object):
             if not isinstance(query, Query):
                 query = Query.new_from_tuple(query)
             # Run the queryset through Django Rest Framework filters
-            queryset = query.queryset.all()
-            queryset = self.filter_queryset(queryset)
+            queryset = self.filter_queryset(query.queryset)
             
             # If there is a user-defined filter, run that too.
             if query.filter_fn is not None:

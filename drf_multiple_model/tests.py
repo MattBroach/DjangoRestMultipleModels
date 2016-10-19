@@ -128,6 +128,17 @@ class DynamicQueryView(MultipleModelAPIView):
         return queryList
 
 
+class CachedQueryView(MultipleModelAPIView):
+    def get_queryList(self):
+        queryList = cache.get('cachedquerylist')
+        if not queryList:
+            title = self.kwargs['play'].replace('-', ' ')
+            queryList = ((Play.objects.filter(title=title), PlaySerializer),
+                         (Poem.objects.filter(style="Sonnet"), PoemSerializer))
+            cache.set('cachedquerylist', queryList)
+        return queryList
+
+
 # Testing PageNumberPagination
 class BasicPagination(pagination.PageNumberPagination):
     page_size = 5
@@ -525,6 +536,28 @@ class TestMMViews(TestCase):
             ]}
         ])
 
+    def test_cached_queryList(self):
+        view = CachedQueryView.as_view()
+
+        request = factory.get('/Julius-Caesar')
+        with self.assertNumQueries(2):
+            response = view(request, play="Julius-Caesar")
+        with self.assertNumQueries(0):
+            response = view(request, play="Julius-Caesar")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data, [
+            {'play': [
+                {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+            ]
+            },
+            {'poem': [
+                {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
+            ]}
+        ])
 
     def test_url_endpoint(self):
         """
