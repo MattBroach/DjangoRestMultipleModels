@@ -1,21 +1,22 @@
-from django.db import models
-from django.test import TestCase, override_settings
-from django.conf.urls import url
-import django.template.loader
-from django.template import TemplateDoesNotExist, Template
-
-from rest_framework import serializers, status, renderers, \
-        pagination, filters, routers
-from rest_framework.test import APIRequestFactory
-from rest_framework.test import APIClient
-
-from drf_multiple_model.views import MultipleModelAPIView
-from drf_multiple_model.mixins import Query
-from drf_multiple_model.viewsets import MultipleModelAPIViewSet
-
 from collections import OrderedDict
 
+import django.template.loader
+from django.conf.urls import url
+from django.core.cache import cache
+from django.db import models
+from django.template import TemplateDoesNotExist, Template
+from django.test import TestCase, override_settings
+from rest_framework import serializers, status, renderers, \
+    pagination, filters, routers
+from rest_framework.test import APIClient
+from rest_framework.test import APIRequestFactory
+
+from drf_multiple_model.mixins import Query
+from drf_multiple_model.views import MultipleModelAPIView
+from drf_multiple_model.viewsets import MultipleModelAPIViewSet
+
 factory = APIRequestFactory()
+
 
 # Models
 
@@ -29,23 +30,29 @@ class RestTestModels(models.Model):
         app_label = "mm_tests"
         abstract = True
 
+
 class Play(models.Model):
     genre = models.CharField(max_length=100)
     title = models.CharField(max_length=200)
     year = models.IntegerField(max_length=4)
 
+
 class Poem(models.Model):
     title = models.CharField(max_length=200)
     style = models.CharField(max_length=100)
 
+
 # Serializers
 
 class PlaySerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Play
         fields = ('genre', 'title', 'year')
 
+
 class PoemSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Poem
         fields = ('title', 'style')
@@ -58,9 +65,9 @@ class BasicTestView(MultipleModelAPIView):
     queryList = ((Play.objects.all(), PlaySerializer),
                  (Poem.objects.filter(style="Sonnet"), PoemSerializer))
 
-    
+
 class TestBrowsableAPIView(BasicTestView):
-    renderer_classes = (renderers.BrowsableAPIRenderer, )
+    renderer_classes = (renderers.BrowsableAPIRenderer,)
 
 
 # Testing the objectify property (should return a dict/object instead
@@ -119,6 +126,7 @@ class BrokenView(MultipleModelAPIView):
 
 # Testing get_queryList function
 class DynamicQueryView(MultipleModelAPIView):
+
     def get_queryList(self):
         title = self.kwargs['play'].replace('-', ' ')
 
@@ -128,11 +136,23 @@ class DynamicQueryView(MultipleModelAPIView):
         return queryList
 
 
+class CachedQueryView(MultipleModelAPIView):
+
+    def get_queryList(self):
+        queryList = cache.get('cachedquerylist')
+        if not queryList:
+            title = self.kwargs['play'].replace('-', ' ')
+            queryList = ((Play.objects.filter(title=title), PlaySerializer),
+                         (Poem.objects.filter(style="Sonnet"), PoemSerializer))
+            cache.set('cachedquerylist', queryList)
+        return queryList
+
+
 # Testing PageNumberPagination
 class BasicPagination(pagination.PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
-    max_page_size = 10 
+    max_page_size = 10
 
 
 class PageNumberPaginationView(BasicFlatView):
@@ -141,7 +161,7 @@ class PageNumberPaginationView(BasicFlatView):
 
 # Testing LinitOffsetPagination
 class LimitPagination(pagination.LimitOffsetPagination):
-    default_limit = 5 
+    default_limit = 5
     max_limit = 15
 
 
@@ -160,6 +180,7 @@ def title_without_letter(queryset, request, *args, **kwargs):
     letter_to_exclude = request.query_params['letter']
     return queryset.exclude(title__icontains=letter_to_exclude)
 
+
 class FilterFnView(MultipleModelAPIView):
     queryList = (Query(Play.objects.all(), PlaySerializer, filter_fn=title_without_letter),
                  (Poem.objects.all(), PoemSerializer))
@@ -167,8 +188,8 @@ class FilterFnView(MultipleModelAPIView):
 
 # Testing Built-in DRF Filter
 class SearchFilterView(BasicTestView):
-    filter_backends = (filters.SearchFilter, )
-    search_fields = ('title', )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('title',)
 
 
 # Testing Base Viewset
@@ -189,9 +210,11 @@ urlpatterns += [
     url(r"^template$", HTMLRendererView.as_view()),
 ]
 
-# Tests 
+
+# Tests
 @override_settings(ROOT_URLCONF=__name__)
 class TestMMViews(TestCase):
+
     def setUp(self):
         Play.objects.bulk_create([
             Play(title='Romeo And Juliet',
@@ -227,7 +250,6 @@ class TestMMViews(TestCase):
         """
 
         view = BasicTestView.as_view()
-        
 
         request = factory.get('/')
         with self.assertNumQueries(2):
@@ -236,23 +258,22 @@ class TestMMViews(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data, [
-            { 'play': [
-                    {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
-                    {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
-                    {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
-                    {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
-                ]
+            {'play': [
+                {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
+                {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
+                {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+                {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
+            ]
             },
-            { 'poem': [
-                    {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
-                    {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
+            {'poem': [
+                {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
             ]}
         ])
 
-
     def test_post(self):
         """
-        POST requests should throw a 405 Error 
+        POST requests should throw a 405 Error
         """
         view = BasicTestView.as_view()
 
@@ -267,7 +288,7 @@ class TestMMViews(TestCase):
 
     def test_put(self):
         """
-        PUT requests should throw a 405 Error 
+        PUT requests should throw a 405 Error
         """
         view = BasicTestView.as_view()
 
@@ -282,7 +303,7 @@ class TestMMViews(TestCase):
 
     def test_delete(self):
         """
-        DELETE requests should throw a 405 Error 
+        DELETE requests should throw a 405 Error
         """
         view = BasicTestView.as_view()
 
@@ -301,14 +322,13 @@ class TestMMViews(TestCase):
         """
 
         view = AsObjectView.as_view()
-        
 
         request = factory.get('/')
         with self.assertNumQueries(2):
             response = view(request).render()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, { 
+        self.assertEqual(response.data, {
             'play': [
                 {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
                 {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
@@ -321,21 +341,19 @@ class TestMMViews(TestCase):
             ]
         })
 
-
     def test_no_label(self):
         """
         Tests that no label (aka add_model_type = False) just gives the data
         """
 
         view = BasicNoLabelView.as_view()
-        
 
         request = factory.get('/')
         with self.assertNumQueries(2):
             response = view(request).render()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data, [
             [
@@ -349,7 +367,7 @@ class TestMMViews(TestCase):
                 {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
             ]
         ])
-        
+
     def test_new_labels(self):
         """
         Adding labels as a third element in the queryList elements should use those labels
@@ -393,7 +411,7 @@ class TestMMViews(TestCase):
 
     def test_ordered_flat(self):
         """
-        Adding the sorting_field attribute should order the flat items according to whatever field 
+        Adding the sorting_field attribute should order the flat items according to whatever field
         """
 
         view = OrderedFlatView.as_view()
@@ -414,7 +432,7 @@ class TestMMViews(TestCase):
 
     def test_reversed_ordered(self):
         """
-        Adding the sorting_field attribute should order the flat items according to whatever field 
+        Adding the sorting_field attribute should order the flat items according to whatever field
         """
 
         view = ReversedFlatView.as_view()
@@ -515,16 +533,38 @@ class TestMMViews(TestCase):
 
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data, [
-            { 'play': [
-                    {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
-                ]
+            {'play': [
+                {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+            ]
             },
-            { 'poem': [
-                    {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
-                    {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
+            {'poem': [
+                {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
             ]}
         ])
 
+    def test_cached_queryList(self):
+        view = CachedQueryView.as_view()
+
+        request = factory.get('/Julius-Caesar')
+        with self.assertNumQueries(2):
+            response = view(request, play="Julius-Caesar")
+        with self.assertNumQueries(0):
+            response = view(request, play="Julius-Caesar")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data, [
+            {'play': [
+                {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+            ]
+            },
+            {'poem': [
+                {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
+            ]}
+        ])
 
     def test_url_endpoint(self):
         """
@@ -563,7 +603,7 @@ class TestMMViews(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
-        # Check change max size 
+        # Check change max size
         request = factory.get('/', {'page_size': 3})
         response = view(request).render()
 
@@ -611,11 +651,11 @@ class TestMMViews(TestCase):
         """
         The filter function is useful if you want to apply filtering to one query
         but not another (unlike adding view level filtering, which will filter all the
-        querysets), but that filtering can't be provided at the beginning (for example, it 
+        querysets), but that filtering can't be provided at the beginning (for example, it
         needs to access a query_param).  This is testing the filter_fn.
         """
 
-        view = FilterFnView.as_view() 
+        view = FilterFnView.as_view()
 
         request = factory.get('/', {'letter': 'o'})
 
@@ -636,7 +676,7 @@ class TestMMViews(TestCase):
                 'poem': [
                     {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
                     {'title': "As a decrepit father takes delight", 'style': 'Sonnet'},
-                    {'title': "A Lover's Complaint", 'style': 'Narrative'} 
+                    {'title': "A Lover's Complaint", 'style': 'Narrative'}
                 ]
             }
         ])
@@ -645,8 +685,8 @@ class TestMMViews(TestCase):
         """
         Tests use of built in DRF filtering with MultipleModelAPIView
         """
-        
-        view = SearchFilterView.as_view() 
+
+        view = SearchFilterView.as_view()
 
         request = factory.get('/', {'search': 'as'})
 
@@ -659,7 +699,7 @@ class TestMMViews(TestCase):
             {
                 'play': [
                     {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
-                    ]
+                ]
             },
             {
                 'poem': [
@@ -678,22 +718,23 @@ class TestMMViews(TestCase):
 
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data, [
-            { 'play': [
-                    {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
-                    {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
-                    {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
-                    {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
-                ]
+            {'play': [
+                {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
+                {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
+                {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
+                {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
+            ]
             },
-            { 'poem': [
-                    {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
-                    {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
+            {'poem': [
+                {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
+                {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
             ]}
         ])
 
 
 @override_settings(ROOT_URLCONF=__name__)
 class TestMMVHTMLRenderer(TestCase):
+
     def setUp(self):
         Play.objects.bulk_create([
             Play(title='Romeo And Juliet',
@@ -719,7 +760,6 @@ class TestMMVHTMLRenderer(TestCase):
                  style="Narrative")
         ])
 
-
         """
         Monkeypatch get_template
         Taken from DRF Tests
@@ -740,13 +780,13 @@ class TestMMVHTMLRenderer(TestCase):
         django.template.loader.select_template = select_template
 
     def test_html_renderer(self):
-        """ 
+        """
         Testing bug in which results dict failed to be passed into template context
         """
 
         client = APIClient()
         response = client.get('/template', {'format': 'html'})
- 
+
         # test the data is formatted properly and shows up in the template
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('data', response.data)
