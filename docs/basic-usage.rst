@@ -5,7 +5,7 @@ Usage
 Basic Usage
 ============
 
-**drf-multiple-model** comes with the ``MultipleModelAPIView`` generic class-based-view for serializing multiple models.  ``MultipleModelAPIView`` requires a ``queryList`` attribute, which is a list or tutple of queryset/serializer pairs (in that order).  For example, let's say you have the following models and serializers::
+**drf-multiple-model** comes with the ``MultipleModelAPIView`` generic class-based-view for serializing multiple models.  ``MultipleModelAPIView`` requires a ``queryList`` attribute, which is a list or tuple of queryset/serializer pairs (in that order).  For example, let's say you have the following models and serializers::
 
     # Models
     class Play(models.Model):
@@ -79,7 +79,7 @@ When using the results of the ``MultipleModelAPIView``, it's often easier to par
         ]
 
 would return::
-    
+
     {
         'play' : [
                 {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'pages': 350},
