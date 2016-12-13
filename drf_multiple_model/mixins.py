@@ -34,6 +34,8 @@ class MultipleModelMixin(object):
     # Flag to determine whether to mix objects together or keep them distinct
     flat = False
 
+    paginating_label = None
+
     # Optional keyword to sort flat lasts by given attribute
     # note that the attribute must by shared by ALL models
     sorting_field = None
@@ -83,6 +85,10 @@ class MultipleModelMixin(object):
             if query.filter_fn is not None:
                 queryset = query.filter_fn(queryset, request, *args, **kwargs)
 
+            # Paginate queryset before format data, if objectify=True
+            if self.objectify:
+                queryset = self.paginate_queryList(queryset)
+
             # Run the paired serializer
             context = self.get_serializer_context()
             data = query.serializer(queryset, many=True, context=context).data
@@ -116,7 +122,7 @@ class MultipleModelMixin(object):
                 label = query.queryset.model.__name__.lower()
 
         if self.flat and self.objectify:
-            raise RuntimeError("Cannot objectify data with flat=True. Try to use objectify=False")
+            raise RuntimeError("Cannot objectify data with flat=True. Try to use flat=False")
 
         # if flat=True, Organize the data in a flat manner
         elif self.flat:
@@ -129,6 +135,12 @@ class MultipleModelMixin(object):
         elif self.objectify:
             if not label:
                 raise RuntimeError("Cannot objectify data. Try to use objectify=False")
+
+            # Get paginated data for selected label, if paginating_label is provided
+            if label == self.paginating_label:
+                paginated_results = self.get_paginated_response(new_data).data
+                paginated_results.pop("results", None)
+                results.update(paginated_results)
 
             results[label] = new_data
 
