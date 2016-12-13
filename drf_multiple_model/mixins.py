@@ -99,6 +99,7 @@ class MultipleModelMixin(object):
             if page is not None:
                 return self.get_paginated_response(page)
 
+
         if request.accepted_renderer.format == 'html':
             return Response({'data': results})
 
@@ -115,7 +116,7 @@ class MultipleModelMixin(object):
                 label = query.queryset.model.__name__.lower()
 
         # if flat=True, Organize the data in a flat manner
-        if self.flat:
+        if self.flat and not self.objectify:
             for datum in new_data:
                 if label:
                     datum.update({'type': label})
