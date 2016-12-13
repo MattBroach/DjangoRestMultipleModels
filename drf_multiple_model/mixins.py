@@ -115,8 +115,11 @@ class MultipleModelMixin(object):
             if self.add_model_type:
                 label = query.queryset.model.__name__.lower()
 
+        if self.flat and self.objectify:
+            raise RuntimeError("Cannot objectify data with flat=True. Try to use objectify=False")
+
         # if flat=True, Organize the data in a flat manner
-        if self.flat and not self.objectify:
+        elif self.flat:
             for datum in new_data:
                 if label:
                     datum.update({'type': label})
