@@ -34,6 +34,8 @@ class MultipleModelMixin(object):
     # Flag to determine whether to mix objects together or keep them distinct
     flat = False
 
+    paginating_label = None
+
     # Optional keyword to sort flat lasts by given attribute
     # note that the attribute must by shared by ALL models
     sorting_field = None
@@ -99,6 +101,7 @@ class MultipleModelMixin(object):
             if page is not None:
                 return self.get_paginated_response(page)
 
+
         if request.accepted_renderer.format == 'html':
             return Response({'data': results})
 
@@ -114,8 +117,11 @@ class MultipleModelMixin(object):
             if self.add_model_type:
                 label = query.queryset.model.__name__.lower()
 
+        if self.flat and self.objectify:
+            raise RuntimeError("Cannot objectify data with flat=True. Try to use flat=False")
+
         # if flat=True, Organize the data in a flat manner
-        if self.flat:
+        elif self.flat:
             for datum in new_data:
                 if label:
                     datum.update({'type': label})
@@ -125,6 +131,12 @@ class MultipleModelMixin(object):
         elif self.objectify:
             if not label:
                 raise RuntimeError("Cannot objectify data. Try to use objectify=False")
+
+            # Get paginated data for selected label, if paginating_label is provided
+            if label == self.paginating_label:
+                paginated_results = self.get_paginated_response(new_data).data
+                paginated_results.pop("results", None)
+                results.update(paginated_results)
 
             results[label] = new_data
 

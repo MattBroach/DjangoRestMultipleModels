@@ -48,7 +48,7 @@ For full configuration options, filtering tools, and more, see [the documentatio
 
 # Basic Usage
 
-**drf-multiple-model** comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tutple of queryset/serializer pairs (in that order).  For example, let's say you have the following models and serializers:
+**drf-multiple-model** comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tuple of queryset/serializer pairs (in that order).  For example, let's say you have the following models and serializers:
 
 ```
 # Models
