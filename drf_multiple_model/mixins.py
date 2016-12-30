@@ -85,10 +85,6 @@ class MultipleModelMixin(object):
             if query.filter_fn is not None:
                 queryset = query.filter_fn(queryset, request, *args, **kwargs)
 
-            # Paginate queryset before format data, if objectify=True
-            if self.objectify:
-                queryset = self.paginate_queryList(queryset)
-
             # Run the paired serializer
             context = self.get_serializer_context()
             data = query.serializer(queryset, many=True, context=context).data
