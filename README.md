@@ -21,7 +21,7 @@ pip install django-rest-multiple-models
 
 Make sure to add 'drf_multiple_model' to your INSTALLED_APPS:
 
-```
+```python
 INSTALLED_APPS = (
     ....
     'drf_multiple_model',
@@ -30,7 +30,7 @@ INSTALLED_APPS = (
 
 Then simply import the view into any views.py in which you'd want to use it:
 
-```
+```python
 from drf_multiple_model.views import MultipleModelAPIView
 ```
 
@@ -50,7 +50,7 @@ For full configuration options, filtering tools, and more, see [the documentatio
 
 **drf-multiple-model** comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tuple of queryset/serializer pairs (in that order).  For example, let's say you have the following models and serializers:
 
-```
+```python
 # Models
 class Play(models.Model):
     genre = models.CharField(max_length=100)
@@ -78,7 +78,7 @@ class PoemSerializer(serializers.ModelSerializer):
 Then you might use the `MultipleModelAPIView` as follows:
 
 
-```
+```python
 from drf_multiple_model.views import MultipleModelAPIView
 
 class TextAPIView(MultipleModelAPIView):
@@ -91,7 +91,7 @@ class TextAPIView(MultipleModelAPIView):
 
 which would return:
 
-```
+```python
 [
     {
         'play' : [
@@ -102,8 +102,8 @@ which would return:
     },
     {
         'poem' : [
-                {'title': 'Shall I compare thee to a summer's day?', 'stanzas': 1},
-                {'title': 'As a decrepit father takes delight', 'stanzas': 1},
+                {'title': "Shall I compare thee to a summer's day?", 'stanzas': 1},
+                {'title': "As a decrepit father takes delight", 'stanzas': 1},
                 ....
             ],
     }
