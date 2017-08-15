@@ -97,7 +97,7 @@ would return::
 Labels
 ------
 
-By default, ``MultipleModelAPIView`` uses the model name as a label.  If you want to use a custome label, you can add a third attribute, a string, to the queryList tuples, like so::
+By default, ``MultipleModelAPIView`` uses the model name as a label.  If you want to use a custom label, you can add a third string attribute to the queryList tuples, like so::
 
     from drf_multiple_model.views import MultipleModelAPIView
 
