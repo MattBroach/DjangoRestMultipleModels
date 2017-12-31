@@ -6,7 +6,7 @@ For user with ViewSets and Routers, **drf-multiple-model** provides the ``Multip
 
     from rest_framework import routers
     
-    from drf_multiple_model.views import MultipleModelAPIViewSet
+    from drf_multiple_model.viewsets import MultipleModelAPIViewSet
 
     class TextAPIView(MultipleModelAPIViewSet):
         queryList = [
