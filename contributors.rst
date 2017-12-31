@@ -15,3 +15,4 @@ Contributors
 * schweickism
 * ELIYAHUT123
 * Malcolm Box <mbox>
+* Evgen Osiptsov <evgenosiptsov>

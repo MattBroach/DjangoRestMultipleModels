@@ -101,7 +101,6 @@ class MultipleModelMixin(object):
             if page is not None:
                 return self.get_paginated_response(page)
 
-
         if request.accepted_renderer.format == 'html':
             return Response({'data': results})
 

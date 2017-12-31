@@ -4,12 +4,11 @@ import django.template.loader
 from django.conf.urls import url
 from django.core.cache import cache
 from django.db import models
-from django.template import TemplateDoesNotExist, Template
+from django.template import TemplateDoesNotExist, engines
 from django.test import TestCase, override_settings
 from rest_framework import serializers, status, renderers, \
     pagination, filters, routers
-from rest_framework.test import APIClient
-from rest_framework.test import APIRequestFactory
+from rest_framework.test import APIClient, APIRequestFactory
 
 from drf_multiple_model.mixins import Query
 from drf_multiple_model.views import MultipleModelAPIView
@@ -34,7 +33,7 @@ class RestTestModels(models.Model):
 class Play(models.Model):
     genre = models.CharField(max_length=100)
     title = models.CharField(max_length=200)
-    year = models.IntegerField(max_length=4)
+    year = models.IntegerField()
 
 
 class Poem(models.Model):
@@ -171,7 +170,7 @@ class LimitOffsetPaginationView(BasicFlatView):
 
 # Testing TemplateHTMLRenderer view bug
 class HTMLRendererView(BasicFlatView):
-    renderer_classes = (renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
+    renderer_classes = (renderers.TemplateHTMLRenderer, renderers.JSONRenderer)
     template_name = 'test.html'
 
 
@@ -401,12 +400,35 @@ class TestMMViews(TestCase):
 
         self.assertEqual(len(response.data), 6)
         self.assertEqual(response.data, [
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597), ('type', 'play')]),
-            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600), ('type', 'play')]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Romeo And Juliet'),
+                ('year', 1597),
+                ('type', 'play')
+            ]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', "A Midsummer Night's Dream"),
+                ('year', 1600),
+                ('type', 'play')
+            ]),
             OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623), ('type', 'play')]),
-            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623), ('type', 'play')]),
-            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet'), ('type', 'poem')]),
-            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet'), ('type', 'poem')]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', 'As You Like It'),
+                ('year', 1623),
+                ('type', 'play')
+            ]),
+            OrderedDict([
+                ('title', "Shall I compare thee to a summer's day?"),
+                ('style', 'Sonnet'),
+                ('type', 'poem')
+            ]),
+            OrderedDict([
+                ('title', "As a decrepit father takes delight"),
+                ('style', 'Sonnet'),
+                ('type', 'poem')
+            ]),
         ])
 
     def test_ordered_flat(self):
@@ -422,12 +444,39 @@ class TestMMViews(TestCase):
 
         self.assertEqual(len(response.data), 6)
         self.assertEqual(response.data, [
-            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600), ('type', 'play')]),
-            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623), ('type', 'play')]),
-            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet'), ('type', 'poem')]),
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623), ('type', 'play')]),
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597), ('type', 'play')]),
-            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet'), ('type', 'poem')]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', "A Midsummer Night's Dream"),
+                ('year', 1600), ('type', 'play')
+            ]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', 'As You Like It'),
+                ('year', 1623),
+                ('type', 'play')
+            ]),
+            OrderedDict([
+                ('title', "As a decrepit father takes delight"),
+                ('style', 'Sonnet'),
+                ('type', 'poem')
+            ]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Julius Caesar'),
+                ('year', 1623),
+                ('type', 'play')
+            ]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Romeo And Juliet'),
+                ('year', 1597),
+                ('type', 'play')
+            ]),
+            OrderedDict([
+                ('title', "Shall I compare thee to a summer's day?"),
+                ('style', 'Sonnet'),
+                ('type', 'poem')
+            ]),
         ])
 
     def test_reversed_ordered(self):
@@ -443,12 +492,40 @@ class TestMMViews(TestCase):
 
         self.assertEqual(len(response.data), 6)
         self.assertEqual(response.data, [
-            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet'), ('type', 'poem')]),
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597), ('type', 'play')]),
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623), ('type', 'play')]),
-            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet'), ('type', 'poem')]),
-            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623), ('type', 'play')]),
-            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600), ('type', 'play')]),
+            OrderedDict([
+                ('title', "Shall I compare thee to a summer's day?"),
+                ('style', 'Sonnet'),
+                ('type', 'poem')
+            ]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Romeo And Juliet'),
+                ('year', 1597),
+                ('type', 'play')
+            ]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Julius Caesar'),
+                ('year', 1623),
+                ('type', 'play')
+            ]),
+            OrderedDict([
+                ('title', "As a decrepit father takes delight"),
+                ('style', 'Sonnet'),
+                ('type', 'poem')
+            ]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', 'As You Like It'),
+                ('year', 1623),
+                ('type', 'play')
+            ]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', "A Midsummer Night's Dream"),
+                ('year', 1600),
+                ('type', 'play')
+            ]),
         ])
 
     def test_ordered_wrong_sorting(self):
@@ -476,12 +553,34 @@ class TestMMViews(TestCase):
 
         self.assertEqual(len(response.data), 6)
         self.assertEqual(response.data, [
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597)]),
-            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600)]),
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623)]),
-            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623)]),
-            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet')]),
-            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet')]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Romeo And Juliet'),
+                ('year', 1597)
+            ]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', "A Midsummer Night's Dream"),
+                ('year', 1600)
+            ]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Julius Caesar'),
+                ('year', 1623)
+            ]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', 'As You Like It'),
+                ('year', 1623)
+            ]),
+            OrderedDict([
+                ('title', "Shall I compare thee to a summer's day?"),
+                ('style', 'Sonnet')
+            ]),
+            OrderedDict([
+                ('title', "As a decrepit father takes delight"),
+                ('style', 'Sonnet')
+            ]),
         ])
 
     def test_flat_custom_labels(self):
@@ -499,12 +598,39 @@ class TestMMViews(TestCase):
 
         self.assertEqual(len(response.data), 6)
         self.assertEqual(response.data, [
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Romeo And Juliet'), ('year', 1597), ('type', 'Drama')]),
-            OrderedDict([('genre', 'Comedy'), ('title', "A Midsummer Night's Dream"), ('year', 1600), ('type', 'Drama')]),
-            OrderedDict([('genre', 'Tragedy'), ('title', 'Julius Caesar'), ('year', 1623), ('type', 'Drama')]),
-            OrderedDict([('genre', 'Comedy'), ('title', 'As You Like It'), ('year', 1623), ('type', 'Drama')]),
-            OrderedDict([('title', "Shall I compare thee to a summer's day?"), ('style', 'Sonnet'), ('type', 'Poetry')]),
-            OrderedDict([('title', "As a decrepit father takes delight"), ('style', 'Sonnet'), ('type', 'Poetry')]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Romeo And Juliet'),
+                ('year', 1597),
+                ('type', 'Drama')
+            ]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', "A Midsummer Night's Dream"),
+                ('year', 1600),
+                ('type', 'Drama')
+            ]),
+            OrderedDict([
+                ('genre', 'Tragedy'),
+                ('title', 'Julius Caesar'),
+                ('year', 1623),
+                ('type', 'Drama')
+            ]),
+            OrderedDict([
+                ('genre', 'Comedy'),
+                ('title', 'As You Like It'),
+                ('year', 1623),
+                ('type', 'Drama')]),
+            OrderedDict([
+                ('title', "Shall I compare thee to a summer's day?"),
+                ('style', 'Sonnet'),
+                ('type', 'Poetry')
+            ]),
+            OrderedDict([
+                ('title', "As a decrepit father takes delight"),
+                ('style', 'Sonnet'),
+                ('type', 'Poetry')
+            ]),
         ])
 
     def test_missing_queryList(self):
@@ -768,12 +894,12 @@ class TestMMVHTMLRenderer(TestCase):
 
         def get_template(template_name, dirs=None):
             if template_name == 'test.html':
-                return Template("<html>test: {{ data }}</html>")
+                return engines['django'].from_string("<html>test: {{ data }}</html>")
             raise TemplateDoesNotExist(template_name)
 
         def select_template(template_name_list, dirs=None, using=None):
             if template_name_list == ['test.html']:
-                return Template("<html>test: {{ data }}</html>")
+                return engines['django'].from_string("<html>test: {{ data }}</html>")
             raise TemplateDoesNotExist(template_name_list[0])
 
         django.template.loader.get_template = get_template
@@ -785,7 +911,7 @@ class TestMMVHTMLRenderer(TestCase):
         """
 
         client = APIClient()
-        response = client.get('/template', {'format': 'html'})
+        response = client.get('/template', format='html')
 
         # test the data is formatted properly and shows up in the template
         self.assertEqual(response.status_code, status.HTTP_200_OK)
