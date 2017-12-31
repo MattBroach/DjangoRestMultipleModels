@@ -13,7 +13,7 @@ env:
    - DJANGO="Django<2"
    - DJANGO="Django<2.1"
 install:
- - pip install "$DJANGO" coverage coveralls djangorestframework
+ - pip install "$DJANGO" coverage coveralls djangorestframework flake8
  - pip install .
 matrix:
   exclude:
