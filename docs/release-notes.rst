@@ -2,6 +2,12 @@
 Release Notes
 =============
 
+1.8.1 (2017-12-20)
+==============
+
+* Dropped support for Django 1.8 and 1.9 (in keeping with Django Rest Framework's support)
+* Expanded test coverage for Django 1.11 and Django 2.0
+
 1.8 (2016-09-04)
 ==============
 
