@@ -1,9 +1,11 @@
 from rest_framework.viewsets import GenericViewSet
 
-from drf_multiple_model.mixins import MultipleModelMixin
+from drf_multiple_model.mixins import FlatMultipleModelMixin, ObjectMultipleModelMixin
 
 
-class MultipleModelAPIViewSet(MultipleModelMixin, GenericViewSet):
+class FlatMultipleModelAPIViewSet(FlatMultipleModelMixin, GenericViewSet):
+    pass
 
-    def get_queryset(self):
-        return
+
+class ObjectMultipleModelAPIViewSet(ObjectMultipleModelMixin, GenericViewSet):
+    pass
