@@ -99,7 +99,7 @@ which would return:
         ....
     ],
     "Poem" : [
-        {"title": "Shall I compare thee to a summer"s day?", "stanzas": 1},
+        {"title": "Shall I compare thee to a summer"s day", "stanzas": 1},
         {"title": "As a decrepit father takes delight", "stanzas": 1},
         ....
     ],
@@ -126,7 +126,7 @@ which would return::
     {"genre": "Comedy", "title": "A Midsummer Night"s Dream", "pages": 350, "type": "Play"},
     {"genre": "Tragedy", "title": "Romeo and Juliet", "pages": 300, "type": "Play"},
     ....
-    {"title": "Shall I compare thee to a summer"s day?", "stanzas": 1, "type": "Poem"},
+    {"title": "Shall I compare thee to a summer"s day", "stanzas": 1, "type": "Poem"},
     {"title": "As a decrepit father takes delight", "stanzas": 1, "type": "Poem"},
     ....
 ]
