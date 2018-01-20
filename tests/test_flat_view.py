@@ -55,7 +55,7 @@ class DynamicQueryView(FlatMultipleModelAPIView):
 
         querylist = (
             {'queryset': Play.objects.filter(title=title), 'serializer_class': PlaySerializer},
-            {'queryset': Poem.objects.filter(style="Sonnet"), 'serializer_class':PoemSerializer},
+            {'queryset': Poem.objects.filter(style="Sonnet"), 'serializer_class': PoemSerializer},
         )
 
         return querylist
@@ -85,13 +85,14 @@ class FilterFnView(FlatMultipleModelAPIView):
         },
     )
 
+
 class CachedQueryView(FlatMultipleModelAPIView):
     querylist = (
         {'queryset': Play.objects.all(), 'serializer_class': PlaySerializer},
         {'queryset': Poem.objects.filter(style="Sonnet"), 'serializer_class': PoemSerializer},
     )
 
-    def get_queryset(self, query_data, request, *args, **kwargs):
+    def load_queryset(self, query_data, request, *args, **kwargs):
         queryset = cache.get('{}-queryset'.format(query_data['queryset'].model.__name__))
         if not queryset:
             queryset = query_data['queryset'].all()
@@ -178,7 +179,7 @@ class TestMMFlatViews(MultipleModelTestCase):
 
     def test_no_querylist(self):
         """
-        A view with no querylist and no `get_querylist` overwrite should raise 
+        A view with no querylist and no `get_querylist` overwrite should raise
         an assertion error with the appropriate message
         """
         view = NoQuerylistView.as_view()
@@ -186,7 +187,7 @@ class TestMMFlatViews(MultipleModelTestCase):
         request = factory.get('/')
 
         with self.assertRaises(AssertionError) as error:
-            response = view(request).render()
+            view(request).render()
 
         self.assertEqual(str(error.exception), (
             'NoQuerylistView should either include a `querylist` attribute, '
@@ -195,7 +196,7 @@ class TestMMFlatViews(MultipleModelTestCase):
 
     def test_no_queryset(self):
         """
-        A querylist with no `queryset` key should raise a ValidationError with the 
+        A querylist with no `queryset` key should raise a ValidationError with the
         appropriate message
         """
         view = NoQuerysetView.as_view()
@@ -203,7 +204,7 @@ class TestMMFlatViews(MultipleModelTestCase):
         request = factory.get('/')
 
         with self.assertRaises(ValidationError) as error:
-            response = view(request).render()
+            view(request).render()
 
         self.assertEqual(error.exception.message, (
             'All items in the NoQuerysetView querylist attribute '
@@ -212,7 +213,7 @@ class TestMMFlatViews(MultipleModelTestCase):
 
     def test_no_serializer_class(self):
         """
-        A querylist with no `serializer_class` key should raise a ValidationError with the 
+        A querylist with no `serializer_class` key should raise a ValidationError with the
         appropriate message
         """
         view = NoSerializerClassView.as_view()
@@ -220,7 +221,7 @@ class TestMMFlatViews(MultipleModelTestCase):
         request = factory.get('/')
 
         with self.assertRaises(ValidationError) as error:
-            response = view(request).render()
+            view(request).render()
 
         self.assertEqual(error.exception.message, (
             'All items in the NoSerializerClassView querylist attribute '
@@ -342,7 +343,7 @@ class TestMMFlatViews(MultipleModelTestCase):
 
     def test_reverse_sorted(self):
         """
-        Adding a '-' to the front of the sorting_field attribute should order the 
+        Adding a '-' to the front of the sorting_field attribute should order the
         flat items in reverse
         """
         view = ReversedFlatView.as_view()
@@ -409,7 +410,7 @@ class TestMMFlatViews(MultipleModelTestCase):
 
     def test_url_endpoint(self):
         """
-        DRF 3.3 broke the MultipleModelAPIView with a get_queryset call
+        DRF 3.3 broke the MultipleModelAPIView with a load_queryset call
         This test is to replicate (and then fix) that problem
         """
         client = APIClient()

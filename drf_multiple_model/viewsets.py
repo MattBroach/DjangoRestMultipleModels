@@ -4,8 +4,10 @@ from drf_multiple_model.mixins import FlatMultipleModelMixin, ObjectMultipleMode
 
 
 class FlatMultipleModelAPIViewSet(FlatMultipleModelMixin, GenericViewSet):
-    pass
+    def get_queryset(self):
+        return None
 
 
 class ObjectMultipleModelAPIViewSet(ObjectMultipleModelMixin, GenericViewSet):
-    pass
+    def get_queryset(self):
+        return None

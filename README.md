@@ -31,7 +31,7 @@ INSTALLED_APPS = (
 Then simply import the view into any views.py in which you'd want to use it:
 
 ```python
-from drf_multiple_model.views import MultipleModelAPIView
+from drf_multiple_model.views import ObjectMultipleModelAPIView
 ```
 
 **Note:** This package is built on top of Django Rest Framework's generic views and serializers, so it presupposes that Django Rest Framework is installed and added to your project as well.
@@ -48,7 +48,7 @@ For full configuration options, filtering tools, and more, see [the documentatio
 
 # Basic Usage
 
-**drf-multiple-model** comes with the `MultipleModelAPIView` generic class-based-view for serializing multiple models.  `MultipleModelAPIView` requires a `queryList` attribute, which is a list or tuple of queryset/serializer pairs (in that order).  For example, let's say you have the following models and serializers:
+**drf-multiple-model** comes with two generic class-based-view for serializing multiple models: the `ObjectMultipleModelAPIView` and the `FlatMultipleModelAPIView`.  Both views require a `querylist` attribute, which is a list or tuple of dicts containing (at minimum) a `queryset` key and a `serializer_class` key; the main difference between the views is the format of the response data.  For example, let's say you have the following models and serializers:
 
 ```python
 # Models
@@ -75,16 +75,16 @@ class PoemSerializer(serializers.ModelSerializer):
         fields = ('title','stanzas')
 ```
 
-Then you might use the `MultipleModelAPIView` as follows:
+Then you might use the `ObjectMultipleModelAPIView` as follows:
 
 
 ```python
-from drf_multiple_model.views import MultipleModelAPIView
+from drf_multiple_model.views import ObjectMultipleModelAPIView
 
-class TextAPIView(MultipleModelAPIView):
-    queryList = [
-        (Play.objects.all(),PlaySerializer),
-        (Poem.objects.filter(style='Sonnet'),PoemSerializer),
+class TextAPIView(ObjectMultipleModelAPIView):
+    querylist = [
+        {'queryset': Play.objects.all(), 'serializer_class': PlaySerializer},
+        {'queryset': Poem.objects.filter(style='Sonnet'), 'serializer_class': PoemSerializer},
         ....
     ]
 ```
@@ -92,21 +92,42 @@ class TextAPIView(MultipleModelAPIView):
 which would return:
 
 ```python
-[
-    {
-        'play' : [
-                {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'pages': 350},
-                {'genre': 'Tragedy', 'title': "Romeo and Juliet", 'pages': 300},
-                ....
-            ],
-    },
-    {
-        'poem' : [
-                {'title': "Shall I compare thee to a summer's day?", 'stanzas': 1},
-                {'title': "As a decrepit father takes delight", 'stanzas': 1},
-                ....
-            ],
-    }
-]
+{
+    'Play' : [
+        {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'pages': 350},
+        {'genre': 'Tragedy', 'title': "Romeo and Juliet", 'pages': 300},
+        ....
+    ],
+    'Poem' : [
+        {'title': 'Shall I compare thee to a summer's day?', 'stanzas': 1},
+        {'title': 'As a decrepit father takes delight', 'stanzas': 1},
+        ....
+    ],
+}
 ```
 
+Or you coulde use the `FlatMultipleModelAPIView` as follows:
+
+```python
+from drf_multiple_model.views import FlatMultipleModelAPIView
+
+class TextAPIView(FlatMultipleModelAPIView):
+    querylist = [
+        {'queryset': Play.objects.all(), 'serializer_class': PlaySerializer},
+        {'queryset': Poem.objects.filter(style='Sonnet'), 'serializer_class': PoemSerializer},
+        ....
+    ]
+```
+
+which would return::
+
+```python
+[
+    {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'pages': 350, 'type': 'Play'},
+    {'genre': 'Tragedy', 'title': "Romeo and Juliet", 'pages': 300, 'type': 'Play'},
+    ....
+    {'title': 'Shall I compare thee to a summer's day?', 'stanzas': 1, 'type': 'Poem'},
+    {'title': 'As a decrepit father takes delight', 'stanzas': 1, 'type': 'Poem'},
+    ....
+]
+```

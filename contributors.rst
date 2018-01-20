@@ -3,9 +3,9 @@ Contributors
 ============
 
 Project Maintainer and Founder
-=============================
+==============================
 
-* Matt Nishi-Broach <matt@axiologue.org>
+* Matt Nishi-Broach
 
 Contributors
 ============

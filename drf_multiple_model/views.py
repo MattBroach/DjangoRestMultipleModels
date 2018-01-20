@@ -7,7 +7,13 @@ class FlatMultipleModelAPIView(FlatMultipleModelMixin, GenericAPIView):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
+    def get_queryset(self):
+        return None
+
 
 class ObjectMultipleModelAPIView(ObjectMultipleModelMixin, GenericAPIView):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return None
