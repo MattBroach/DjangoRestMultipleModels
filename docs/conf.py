@@ -33,8 +33,10 @@
 import os
 import re
 
+
 def get_init_prop(prop, f):
     return re.search("__{}__ = ['\"]([^'\"]+)['\"]".format(prop), f).group(1)
+
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

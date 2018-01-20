@@ -8,12 +8,14 @@ with open(os.path.join(os.path.dirname(__file__), 'PYPI_README.rst')) as readme:
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
+
 def get_version(package):
     """
     Return package version as listed in `__version__` in `init.py`.
     """
     init_py = open(os.path.join(package, '__init__.py')).read()
     return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
+
 
 version = get_version('drf_multiple_model')
 

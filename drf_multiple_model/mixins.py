@@ -129,6 +129,7 @@ class BaseMultipleModelMixin(object):
 
         return Response(formatted_results)
 
+
 class FlatMultipleModelMixin(BaseMultipleModelMixin):
     """
     Create a List of objects from multiple models/serializers.
