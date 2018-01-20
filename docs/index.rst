@@ -24,7 +24,7 @@ Make sure to add 'drf_multiple_model' to your INSTALLED_APPS::
 
 Then simply import the view into any views.py in which you'd want to use it::
 
-    from drf_multiple_model.views import MultipleModelAPIView
+    from drf_multiple_model.views import ObjectMultipleModelAPIView
 
 **Note:** This package is built on top of Django Rest Framework's generic views and serializers, so it presupposes that Django Rest Framework is installed and added to your project as well.
 
@@ -36,9 +36,12 @@ Contents:
 
    basic-usage
    installation
+   object-options
+   flat-options
    filtering
    pagination
    viewsets
+   one-to-two
    release-notes
    acknowledgments 
 

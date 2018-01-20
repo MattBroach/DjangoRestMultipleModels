@@ -1,41 +1,158 @@
+from django.db.models.query import QuerySet
+from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 
 
-class MultipleModelMixin(object):
+class BaseMultipleModelMixin(object):
     """
-    Create a list of objects from multiple models/serializers.
+    Base class that holds functions need for all MultipleModelMixins/Views
+    """
+    querylist = None
 
-    Mixin is expecting the view will have a queryList variable, which is
-    a list/tuple of queryset/serailizer pairs, like as below:
+    # Keys required for every item in a querylist
+    required_keys = ['queryset', 'serializer_class']
+
+    # default pagination state. Gets overridden if pagination is active
+    is_paginated = False
+
+    def get_querylist(self):
+        assert self.querylist is not None, (
+            '{} should either include a `querylist` attribute, '
+            'or override the `get_querylist()` method.'.format(
+                self.__class__.__name__
+            )
+        )
+
+        return self.querylist
+
+    def check_query_data(self, query_data):
+        """
+        All items in a `querylist` must at least have `queryset` key and a
+        `serializer_class` key. Any querylist item lacking both those keys
+        will raise a ValidationError
+        """
+        for key in self.required_keys:
+            if key not in query_data:
+                raise ValidationError(
+                    'All items in the {} querylist attribute should contain a '
+                    '`{}` key'.format(self.__class__.__name__, key)
+                )
+
+    def load_queryset(self, query_data, request, *args, **kwargs):
+        """
+        Fetches the queryset and runs any necessary filtering, both
+        built-in rest_framework filters and custom filters passed into
+        the querylist
+        """
+        queryset = query_data.get('queryset', [])
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+
+        # run rest_framework filters
+        queryset = self.filter_queryset(queryset)
+
+        # run custom filters
+        filter_fn = query_data.get('filter_fn', None)
+        if filter_fn is not None:
+            queryset = filter_fn(queryset, request, *args, **kwargs)
+
+        page = self.paginate_queryset(queryset)
+        self.is_paginated = page is not None
+
+        return page if page is not None else queryset
+
+    def get_empty_results(self):
+        """
+        Because the base result type is different depending on the return structure
+        (e.g. list for flat, dict for object), `get_result_type` initials the
+        `results` variable to the proper type
+        """
+        assert self.result_type is not None, (
+            '{} must specify a `result_type` value or overwrite the '
+            '`get_empty_result` method.'.format(self.__class__.__name__)
+        )
+
+        return self.result_type()
+
+    def add_to_results(self, data, label, results):
+        """
+        responsible for updating the running `results` variable with the
+        data from this queryset/serializer combo
+        """
+        raise NotImplementedError(
+            '{} must specify how to add data to the running results tally '
+            'by overriding the `add_to_results` method.'.format(
+                self.__class__.__name__
+            )
+        )
+
+    def format_results(self, results, request):
+        """
+        hook for processing/formatting the entire returned data set, once
+        the querylist has been evaluated
+        """
+        return results
+
+    def list(self, request, *args, **kwargs):
+        querylist = self.get_querylist()
+
+        results = self.get_empty_results()
+
+        for query_data in querylist:
+            self.check_query_data(query_data)
+
+            queryset = self.load_queryset(query_data, request, *args, **kwargs)
+
+            # Run the paired serializer
+            context = self.get_serializer_context()
+            data = query_data['serializer_class'](queryset, many=True, context=context).data
+
+            label = self.get_label(queryset, query_data)
+
+            # Add the serializer data to the running results tally
+            results = self.add_to_results(data, label, results)
+
+        formatted_results = self.format_results(results, request)
+
+        if self.is_paginated:
+            try:
+                formatted_results = self.paginator.format_response(formatted_results)
+            except AttributeError:
+                raise NotImplementedError(
+                    "{} cannot use the regular Rest Framework or Django paginators as is. "
+                    "Use one of the included paginators from `drf_multiple_models.pagination "
+                    "or subclass a paginator to add the `format_response` method."
+                    "".format(self.__class__.__name__)
+                )
+
+        return Response(formatted_results)
+
+class FlatMultipleModelMixin(BaseMultipleModelMixin):
+    """
+    Create a List of objects from multiple models/serializers.
+
+    Mixin is expecting the view will have a querylist variable, which is
+    a list/tuple of dicts containing, at mininum, a `queryset` key and a
+    `serializer_class` key,  as below:
 
     queryList = [
-            (querysetA,serializerA),
-            (querysetB,serializerB),
-            (querysetC,serializerC),
-            .....
+        {'queryset': MyModalA.objects.all(), 'serializer_class': MyModelASerializer ),
+        {'queryset': MyModalB.objects.all(), 'serializer_class': MyModelBSerializer ),
+        {'queryset': MyModalC.objects.all(), 'serializer_class': MyModelCSerializer ),
+        .....
     ]
 
-    optionally, you can add a third element to the queryList,
-    a label to define that particular data type:
+    This mixin returns a list of serialized data merged together in a single list, eg:
 
-    queryList = [
-            (querysetA,serializerA,'labelA'),
-            (querysetB,serializerB,'labelB'),
-            (querysetC,serializerC),
-            .....
+    [
+        { 'id': 1, 'type': 'myModelA', 'title': 'some_object' },
+        { 'id': 4, 'type': 'myModelB', 'title': 'some_other_object' },
+        { 'id': 8, 'type': 'myModelA', 'title': 'anotherother_object' },
+        ...
     ]
-
     """
-
-    objectify = False
-
-    queryList = None
-
-    # Flag to determine whether to mix objects together or keep them distinct
-    flat = False
-
-    paginating_label = None
-
     # Optional keyword to sort flat lasts by given attribute
     # note that the attribute must by shared by ALL models
     sorting_field = None
@@ -43,113 +160,48 @@ class MultipleModelMixin(object):
     # Flag to append the particular django model being used to the data
     add_model_type = True
 
-    def get_queryList(self):
-        assert self.queryList is not None, (
-            "'%s' should either include a `queryList` attribute, "
-            "or override the `get_queryList()` method."
-            % self.__class__.__name__
-        )
+    result_type = list
 
-        queryList = self.queryList
-        qlist = []
-        for query in queryList:
-            if not isinstance(query, Query):
-                query = Query.new_from_tuple(query)
-            qs = query.queryset.all()
-            query.queryset = qs
-            qlist.append(query)
-
-        return qlist
-
-    def paginate_queryList(self, queryList):
+    def get_label(self, queryset, query_data):
         """
-        Wrapper for pagination function.
-
-        By default it just calls paginate_queryset, but can be overwritten for custom functionality
+        Gets option label for each datum. Can be used for type identification
+        of individual serialized objects
         """
-        return self.paginate_queryset(queryList)
+        if query_data.get('label', False):
+            return query_data['label']
+        elif self.add_model_type:
+            try:
+                return queryset.model.__name__
+            except AttributeError:
+                return query_data['queryset'].model.__name__
 
-    def list(self, request, *args, **kwargs):
-        queryList = self.get_queryList()
+    def add_to_results(self, data, label, results):
+        """
+        Adds the label to the results, as needed, then appends the data
+        to the running results tab
+        """
+        for datum in data:
+            if label is not None:
+                datum.update({'type': label})
 
-        results = {} if self.objectify else []
-
-        # Iterate through the queryList, run each queryset and serialize the data
-        for query in queryList:
-            if not isinstance(query, Query):
-                query = Query.new_from_tuple(query)
-            # Run the queryset through Django Rest Framework filters
-            queryset = self.filter_queryset(query.queryset)
-
-            # If there is a user-defined filter, run that too.
-            if query.filter_fn is not None:
-                queryset = query.filter_fn(queryset, request, *args, **kwargs)
-
-            # Run the paired serializer
-            context = self.get_serializer_context()
-            data = query.serializer(queryset, many=True, context=context).data
-
-            results = self.format_data(data, query, results)
-
-        if self.flat:
-            # Sort by given attribute, if sorting_attribute is provided
-            if self.sorting_field:
-                results = self.queryList_sort(results)
-
-            # Return paginated results if pagination is enabled
-            page = self.paginate_queryList(results)
-            if page is not None:
-                return self.get_paginated_response(page)
-
-        if request.accepted_renderer.format == 'html':
-            return Response({'data': results})
-
-        return Response(results)
-
-    # formats the serialized data based on various view properties (e.g. flat=True)
-    def format_data(self, new_data, query, results):
-        # Get the label, unless add_model_type is note set
-        label = None
-        if query.label is not None:
-            label = query.label
-        else:
-            if self.add_model_type:
-                label = query.queryset.model.__name__.lower()
-
-        if self.flat and self.objectify:
-            raise RuntimeError("Cannot objectify data with flat=True. Try to use flat=False")
-
-        # if flat=True, Organize the data in a flat manner
-        elif self.flat:
-            for datum in new_data:
-                if label:
-                    datum.update({'type': label})
-                results.append(datum)
-
-        # if objectify=True, Organize the data in an object
-        elif self.objectify:
-            if not label:
-                raise RuntimeError("Cannot objectify data. Try to use objectify=False")
-
-            # Get paginated data for selected label, if paginating_label is provided
-            if label == self.paginating_label:
-                paginated_results = self.get_paginated_response(new_data).data
-                paginated_results.pop("results", None)
-                results.update(paginated_results)
-
-            results[label] = new_data
-
-        # Otherwise, group the data by Model/Queryset
-        else:
-            if label:
-                new_data = {label: new_data}
-
-            results.append(new_data)
+            results.append(datum)
 
         return results
 
-    # Sort based on the given sorting field property
-    def queryList_sort(self, results):
+    def format_results(self, results, request):
+        """
+        Sorts results if `sorting_field` is available and valid
+        """
+        if self.sorting_field:
+            results = self.sort_results(results)
+
+        if request.accepted_renderer.format == 'html':
+            # Makes the the results available to the template context by transforming to a dict
+            results = {'data': results}
+
+        return results
+
+    def sort_results(self, results):
         """
         determing if sort is ascending or descending
         based on the presence of '-' at the beginning of the
@@ -169,20 +221,52 @@ class MultipleModelMixin(object):
         )
 
 
-class Query(object):
+class ObjectMultipleModelMixin(BaseMultipleModelMixin):
+    """
+    Create a Dictionary of objects from multiple models/serializers.
 
-    def __init__(self, queryset, serializer, label=None, filter_fn=None, ):
-        self.queryset = queryset
-        self.serializer = serializer
-        self.filter_fn = filter_fn
-        self.label = label
+    Mixin is expecting the view will have a querylist variable, which is
+    a list/tuple of dicts containing, at mininum, a `queryset` key and a
+    `serializer_class` key,  as below:
 
-    @classmethod
-    def new_from_tuple(cls, tuple_):
+    queryList = [
+        {'queryset': MyModalA.objects.all(), 'serializer_class': MyModelASerializer ),
+        {'queryset': MyModalB.objects.all(), 'serializer_class': MyModelBSerializer ),
+        {'queryset': MyModalC.objects.all(), 'serializer_class': MyModelCSerializer ),
+        ...
+    ]
+
+    This mixin returns a dictionary of serialized data separated by object type, e.g.:
+
+    {
+        'MyModelA': [
+            { 'id': 1, 'type': 'myModelA', 'title': 'some_object' },
+            { 'id': 8, 'type': 'myModelA', 'title': 'anotherother_object' },
+            ...
+        ],
+        'MyModelB': [
+            { 'id': 4, 'type': 'myModelB', 'title': 'some_other_object' },
+            ...
+        ]
+        ...
+    }
+    """
+    result_type = dict
+
+    def add_to_results(self, data, label, results):
+        results[label] = data
+
+        return results
+
+    def get_label(self, queryset, query_data):
+        """
+        Gets option label for each datum. Can be used for type identification
+        of individual serialized objects
+        """
+        if query_data.get('label', False):
+            return query_data['label']
+
         try:
-            queryset, serializer, label = tuple_
-        except ValueError:
-            queryset, serializer = tuple_
-            label = None
-        query = Query(queryset, serializer, label)
-        return query
+            return queryset.model.__name__
+        except AttributeError:
+            return query_data['queryset'].model.__name__
