@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/Axiologue/DjangoRestMultipleModels.svg?branch=master)](https://travis-ci.org/Axiologue/DjangoRestMultipleModels)
+[![Build Status](https://travis-ci.org/MattBroach/DjangoRestMultipleModels.svg?branch=master)](https://travis-ci.org/MattBroach/DjangoRestMultipleModels)
 [![Coverage Status](https://coveralls.io/repos/github/Axiologue/DjangoRestMultipleModels/badge.svg?branch=master)](https://coveralls.io/github/Axiologue/DjangoRestMultipleModels?branch=master)
 [![PyPI version](https://badge.fury.io/py/django-rest-multiple-models.svg)](https://badge.fury.io/py/django-rest-multiple-models)
 
@@ -40,7 +40,7 @@ from drf_multiple_model.views import ObjectMultipleModelAPIView
 
 * Send multiple serialized models as separate arrays, one merged list, or a single JSON object
 * Sort different serialized models using shared fields
-* pagination (sort of)
+* pagination
 * Filtering -- either per queryset or on all querysets
 * custom model labeling
 
