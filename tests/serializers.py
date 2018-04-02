@@ -1,6 +1,12 @@
 from rest_framework import serializers
 
-from .models import Play, Poem
+from .models import Author, Play, Poem
+
+
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Author
+        fields = ('name',)
 
 
 class PlaySerializer(serializers.ModelSerializer):
@@ -13,3 +19,19 @@ class PoemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poem
         fields = ('title', 'style')
+
+
+class PlayWithAuthorSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer()
+
+    class Meta:
+        model = Play
+        fields = ('genre', 'title', 'year', 'author')
+
+
+class PoemWithAuthorSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer()
+
+    class Meta:
+        model = Poem
+        fields = ('title', 'style', 'author')

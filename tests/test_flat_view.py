@@ -7,9 +7,8 @@ from rest_framework import status, filters
 
 from .utils import MultipleModelTestCase
 from .models import Play, Poem
-from .serializers import PlaySerializer, PoemSerializer
+from .serializers import PlaySerializer, PoemSerializer, PlayWithAuthorSerializer, PoemWithAuthorSerializer
 from drf_multiple_model.views import FlatMultipleModelAPIView
-
 
 factory = APIRequestFactory()
 
@@ -28,6 +27,22 @@ class SortedFlatView(BasicFlatView):
 
 class ReversedFlatView(BasicFlatView):
     sorting_field = '-title'
+
+
+class SortingFlatView(FlatMultipleModelAPIView):
+    sorting_fields_map = {'author': 'author__name'}
+
+    querylist = (
+        {'queryset': Play.objects.select_related('author'), 'serializer_class': PlayWithAuthorSerializer},
+        {
+            'queryset': Poem.objects.select_related('author').filter(style="Sonnet"),
+            'serializer_class': PoemWithAuthorSerializer
+        },
+    )
+
+
+class CustomSortingParamFlatView(SortingFlatView):
+    sorting_parameter_name = 'custom_o'
 
 
 class NoLabelView(BasicFlatView):
@@ -361,6 +376,34 @@ class TestMMFlatViews(MultipleModelTestCase):
             {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'type': 'Play'},
             {'genre': 'Comedy', 'title': 'A Midsummer Night\'s Dream', 'year': 1600, 'type': 'Play'},
         ])
+
+    def test_sorting_by_model_field(self):
+        """
+        Adding the sorting_field attribute should order the flat items according to whatever field
+        """
+        view = SortingFlatView.as_view()
+        expected_result = [
+            {'genre': 'Tragedy', 'title': 'Romeo And Juliet', 'year': 1597, 'author': {'name': 'Play Shakespeare 1'},
+             'type': 'Play'},
+            {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'year': 1600,
+             'author': {'name': 'Play Shakespeare 2'}, 'type': 'Play'},
+            {'genre': 'Tragedy', 'title': 'Julius Caesar', 'year': 1623, 'author': {'name': 'Play Shakespeare 3'},
+             'type': 'Play'},
+            {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'author': {'name': 'Play Shakespeare 4'},
+             'type': 'Play'},
+            {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet',
+             'author': {'name': 'Poem Shakespeare 1'}, 'type': 'Poem'},
+            {'title': 'As a decrepit father takes delight', 'style': 'Sonnet', 'author': {'name': 'Poem Shakespeare 2'},
+             'type': 'Poem'}
+        ]
+
+        for sorting_arg in ('-author', 'author'):
+            request = factory.get('/?o={}'.format(sorting_arg))
+            with self.assertNumQueries(2):
+                response = view(request).render()
+
+            self.assertEqual(len(response.data), 6)
+            self.assertEqual(response.data, list(reversed(expected_result)) if '-' in sorting_arg else expected_result)
 
     def test_ordered_wrong_sorting(self):
         """

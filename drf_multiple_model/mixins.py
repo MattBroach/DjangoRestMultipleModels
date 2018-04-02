@@ -158,6 +158,13 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     # note that the attribute must by shared by ALL models
     sorting_field = None
 
+    # A mapping, similar to Django's `OrderingFilter`. In the following format: {parameter name: result field name}
+    # If request query param contains sorting parameter (by default - 'o'), result will be sorted by this parameter.
+    # Django-like model lookups are supported via '__', but you have to be sure that all querysets will return results
+    # with corresponding structure.
+    sorting_fields_map = {}
+    sorting_parameter_name = 'o'
+
     # Flag to append the particular django model being used to the data
     add_model_type = True
 
@@ -202,23 +209,45 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
 
         return results
 
+    def _get_datum_field(self, datum):
+        """
+        Key function that is used for results sorting. This is passed as argument to `sorted()`
+        """
+        if '__' in self.sorting_field:
+            obj, key = self.sorting_field.split('__')
+            try:
+                item = datum[obj]
+                if isinstance(item, list):
+                    return item[0][key]
+                else:
+                    return item[key]
+            except IndexError:
+                # Corresponding item of the result is an empty array. So it is put in the beginning of the list (if ASC)
+                # This is arguable: maybe we should put 'zzzzzz' here, to make sure it goes to the bottom. But this, in
+                # its turn, will create another dispute: precedence of unicode characters in sorting.
+                return ''
+            except KeyError:
+                raise ValidationError('Invalid sorting field: {}. All result items should contain {} -> {} values'
+                                      .format(self.sorting_field, obj, key))
+        else:
+            return datum[self.sorting_field]
+
     def sort_results(self, results):
         """
         determing if sort is ascending or descending
         based on the presence of '-' at the beginning of the
         sorting_field attribute
         """
-        sorting_field = self.sorting_field
         sort_descending = self.sorting_field[0] == '-'
 
         # Remove the '-' if sort descending
         if sort_descending:
-            sorting_field = sorting_field[1:len(sorting_field)]
+            self.sorting_field = self.sorting_field[1:]
 
         return sorted(
             results,
             reverse=sort_descending,
-            key=lambda datum: datum[sorting_field]
+            key=self._get_datum_field
         )
 
 
