@@ -377,7 +377,7 @@ class TestMMFlatViews(MultipleModelTestCase):
             {'genre': 'Comedy', 'title': 'A Midsummer Night\'s Dream', 'year': 1600, 'type': 'Play'},
         ])
 
-    def test_sorting_by_model_field(self):
+    def test_sorting_by_request_parameter(self):
         """
         Adding the sorting_field attribute should order the flat items according to whatever field
         """
@@ -397,8 +397,36 @@ class TestMMFlatViews(MultipleModelTestCase):
              'type': 'Poem'}
         ]
 
-        for sorting_arg in ('-author', 'author'):
+        for sorting_arg in ('author', '-author'):
             request = factory.get('/?o={}'.format(sorting_arg))
+            with self.assertNumQueries(2):
+                response = view(request).render()
+
+            self.assertEqual(len(response.data), 6)
+            self.assertEqual(response.data, list(reversed(expected_result)) if '-' in sorting_arg else expected_result)
+
+    def test_sorting_by_custom_request_parameter(self):
+        """
+        Adding the sorting_field attribute should order the flat items according to whatever field
+        """
+        view = CustomSortingParamFlatView.as_view()
+        expected_result = [
+            {'genre': 'Tragedy', 'title': 'Romeo And Juliet', 'year': 1597, 'author': {'name': 'Play Shakespeare 1'},
+             'type': 'Play'},
+            {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'year': 1600,
+             'author': {'name': 'Play Shakespeare 2'}, 'type': 'Play'},
+            {'genre': 'Tragedy', 'title': 'Julius Caesar', 'year': 1623, 'author': {'name': 'Play Shakespeare 3'},
+             'type': 'Play'},
+            {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'author': {'name': 'Play Shakespeare 4'},
+             'type': 'Play'},
+            {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet',
+             'author': {'name': 'Poem Shakespeare 1'}, 'type': 'Poem'},
+            {'title': 'As a decrepit father takes delight', 'style': 'Sonnet', 'author': {'name': 'Poem Shakespeare 2'},
+             'type': 'Poem'}
+        ]
+
+        for sorting_arg in ('author', '-author'):
+            request = factory.get('/?custom_o={}'.format(sorting_arg))
             with self.assertNumQueries(2):
                 response = view(request).render()
 

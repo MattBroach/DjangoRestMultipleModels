@@ -9,9 +9,12 @@ class FlatMultipleModelAPIView(FlatMultipleModelMixin, GenericAPIView):
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
-        if 'o' in request.query_params:
-            sorting_parameter = request.query_params.get(self.sorting_parameter_name)
-            self.sorting_field = self.sorting_fields_map.get(sorting_parameter.lstrip('-'), sorting_parameter)
+        if self.sorting_parameter_name in request.query_params:
+            self.sorting_field = request.query_params.get(self.sorting_parameter_name)
+            self.sort_descending = self.sorting_field[0] == '-'
+            if self.sort_descending:
+                self.sorting_field = self.sorting_field[1:]
+            self.sorting_field = self.sorting_fields_map.get(self.sorting_field, self.sorting_field)
 
     def get_queryset(self):
         return None

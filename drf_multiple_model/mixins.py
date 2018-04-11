@@ -164,6 +164,7 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     # with corresponding structure.
     sorting_fields_map = {}
     sorting_parameter_name = 'o'
+    sort_descending = False
 
     # Flag to append the particular django model being used to the data
     add_model_type = True
@@ -218,13 +219,12 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
             try:
                 item = datum[obj]
                 if isinstance(item, list):
+                    # Corresponding item of the result is an array. In this case we sort by array's first item
                     return item[0][key]
                 else:
                     return item[key]
             except IndexError:
                 # Corresponding item of the result is an empty array. So it is put in the beginning of the list (if ASC)
-                # This is arguable: maybe we should put 'zzzzzz' here, to make sure it goes to the bottom. But this, in
-                # its turn, will create another dispute: precedence of unicode characters in sorting.
                 return ''
             except KeyError:
                 raise ValidationError('Invalid sorting field: {}. All result items should contain {} -> {} values'
@@ -238,15 +238,9 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         based on the presence of '-' at the beginning of the
         sorting_field attribute
         """
-        sort_descending = self.sorting_field[0] == '-'
-
-        # Remove the '-' if sort descending
-        if sort_descending:
-            self.sorting_field = self.sorting_field[1:]
-
         return sorted(
             results,
-            reverse=sort_descending,
+            reverse=self.sort_descending,
             key=self._get_datum_field
         )
 
