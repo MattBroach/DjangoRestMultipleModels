@@ -8,9 +8,13 @@ class FlatMultipleModelAPIView(FlatMultipleModelMixin, GenericAPIView):
         return self.list(request, *args, **kwargs)
 
     def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
+        super(GenericAPIView, self).initial(request, *args, **kwargs)
         if self.sorting_parameter_name in request.query_params:
+            # Extract sorting parameter from query string
             self.sorting_field = request.query_params.get(self.sorting_parameter_name)
+
+        if self.sorting_field:
+            # Handle sorting direction and sorting field mapping
             self.sort_descending = self.sorting_field[0] == '-'
             if self.sort_descending:
                 self.sorting_field = self.sorting_field[1:]
