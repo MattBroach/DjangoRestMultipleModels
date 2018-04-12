@@ -393,8 +393,8 @@ class TestMMFlatViews(MultipleModelTestCase):
              'type': 'Play'},
             {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet',
              'author': {'name': 'Poem Shakespeare 1'}, 'type': 'Poem'},
-            {'title': 'As a decrepit father takes delight', 'style': 'Sonnet', 'author': {'name': 'Poem Shakespeare 2'},
-             'type': 'Poem'}
+            {'title': 'As a decrepit father takes delight', 'style': 'Sonnet',
+             'author': {'name': 'Poem Shakespeare 2'}, 'type': 'Poem'}
         ]
 
         for sorting_arg in ('author', '-author'):
@@ -421,8 +421,8 @@ class TestMMFlatViews(MultipleModelTestCase):
              'type': 'Play'},
             {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet',
              'author': {'name': 'Poem Shakespeare 1'}, 'type': 'Poem'},
-            {'title': 'As a decrepit father takes delight', 'style': 'Sonnet', 'author': {'name': 'Poem Shakespeare 2'},
-             'type': 'Poem'}
+            {'title': 'As a decrepit father takes delight', 'style': 'Sonnet',
+             'author': {'name': 'Poem Shakespeare 2'}, 'type': 'Poem'}
         ]
 
         for sorting_arg in ('author', '-author'):

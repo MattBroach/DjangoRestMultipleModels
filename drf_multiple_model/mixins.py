@@ -224,7 +224,8 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
                 else:
                     return item[key]
             except IndexError:
-                # Corresponding item of the result is an empty array. So it is put in the beginning of the list (if ASC)
+                # Corresponding item of the result is an empty array. So it is put in the beginning
+                # of the list (if ASC)
                 return ''
             except KeyError:
                 raise ValidationError('Invalid sorting field: {}. All result items should contain {} -> {} values'
