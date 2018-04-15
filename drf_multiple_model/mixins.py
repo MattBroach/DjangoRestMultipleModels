@@ -171,6 +171,8 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
 
     result_type = list
 
+    _list_attribute_error = 'Invalid sorting field. Corresponding data item is a list: {}'
+
     def get_label(self, queryset, query_data):
         """
         Gets option label for each datum. Can be used for type identification
@@ -199,8 +201,9 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
 
     def format_results(self, results, request):
         """
-        Sorts results if `sorting_field` is available and valid
+        Prepares sorting parameters, and sorts results, if(as) necessary
         """
+        self.prepare_sorting_field()
         if self.sorting_field:
             results = self.sort_results(results)
 
@@ -210,39 +213,50 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
 
         return results
 
-    def _get_datum_field(self, datum):
+    def _sort_by(self, datum, param=None, path=None):
         """
         Key function that is used for results sorting. This is passed as argument to `sorted()`
         """
-        if '__' in self.sorting_field:
-            obj, key = self.sorting_field.split('__')
-            try:
-                item = datum[obj]
-                if isinstance(item, list):
-                    # Corresponding item of the result is an array. In this case we sort by array's first item
-                    return item[0][key]
-                else:
-                    return item[key]
-            except IndexError:
-                # Corresponding item of the result is an empty array. So it is put in the beginning
-                # of the list (if ASC)
-                return ''
-            except KeyError:
-                raise ValidationError('Invalid sorting field: {}. All result items should contain {} -> {} values'
-                                      .format(self.sorting_field, obj, key))
-        else:
-            return datum[self.sorting_field]
+        if not path:
+            path = []
+        try:
+            if not param:  # If param is present, this is a recursive call
+                param = self.sorting_field
+            if '__' in param:
+                root, new_param = param.split('__')
+                path.append(root)
+                return self._sort_by(datum[root], param=new_param, path=path)
+
+            data = datum[param]
+            if isinstance(data, list):
+                raise ValidationError(self._list_attribute_error.format(param))
+            return data
+        except TypeError:
+            raise ValidationError(self._list_attribute_error.format('.'.join(path) or self.sorting_field))
+        except KeyError:
+            raise ValidationError('Invalid sorting field: {}'.format('.'.join(path) or self.sorting_field))
+
+    def prepare_sorting_field(self):
+        """
+        Determine sorting direction and sorting field based on request query parameters and sorting options
+        of self
+        """
+        if self.sorting_parameter_name in self.request.query_params:
+            # Extract sorting parameter from query string
+            self.sorting_field = self.request.query_params.get(self.sorting_parameter_name)
+
+        if self.sorting_field:
+            # Handle sorting direction and sorting field mapping
+            self.sort_descending = self.sorting_field[0] == '-'
+            if self.sort_descending:
+                self.sorting_field = self.sorting_field[1:]
+            self.sorting_field = self.sorting_fields_map.get(self.sorting_field, self.sorting_field)
 
     def sort_results(self, results):
-        """
-        determing if sort is ascending or descending
-        based on the presence of '-' at the beginning of the
-        sorting_field attribute
-        """
         return sorted(
             results,
             reverse=self.sort_descending,
-            key=self._get_datum_field
+            key=self._sort_by
         )
 
 

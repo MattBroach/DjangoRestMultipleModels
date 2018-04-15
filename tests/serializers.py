@@ -35,3 +35,12 @@ class PoemWithAuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poem
         fields = ('title', 'style', 'author')
+
+
+class AuthorListSerializer(AuthorSerializer):
+    plays = PlaySerializer(many=True)
+    poems = PoemSerializer(many=True)
+
+    class Meta:
+        model = Author
+        fields = AuthorSerializer.Meta.fields + ('plays', 'poems')
