@@ -85,5 +85,8 @@ would return::
 
 As with django field ordering, add '-' to the beginning of the field to enable reverse sorting.  Setting ``sorting_field='-title'`` would sort the title fields in __descending__ order.
 
+Also, a DRF-style sorting is supported. By default it uses ``o`` parameter from request query string. ``sorting_parameter_name`` property controls what parameter to use for sorting.
+Lookups are working in the django-filters style, like ``property_1__property_2`` (which will use object's ``property_1`` and, in turn, its ``property_2`` as key argument to ``sorted()``)
+
 **WARNING:** the field chosen for ordering must be shared by all models/serializers in your ``querylist``.  Any attempt to sort objects along non_shared fields will throw a ``KeyError``.
 
