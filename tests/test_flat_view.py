@@ -6,10 +6,10 @@ from rest_framework.test import APIClient, APIRequestFactory
 from rest_framework import status, filters
 
 from .utils import MultipleModelTestCase
-from .models import Play, Poem
-from .serializers import PlaySerializer, PoemSerializer
+from .models import Play, Poem, Author
+from .serializers import PlaySerializer, PoemSerializer, PlayWithAuthorSerializer, PoemWithAuthorSerializer, \
+    AuthorListSerializer
 from drf_multiple_model.views import FlatMultipleModelAPIView
-
 
 factory = APIRequestFactory()
 
@@ -28,6 +28,29 @@ class SortedFlatView(BasicFlatView):
 
 class ReversedFlatView(BasicFlatView):
     sorting_field = '-title'
+
+
+class SortingFlatView(FlatMultipleModelAPIView):
+    sorting_fields_map = {'author': 'author__name'}
+
+    querylist = (
+        {'queryset': Play.objects.select_related('author'), 'serializer_class': PlayWithAuthorSerializer},
+        {
+            'queryset': Poem.objects.select_related('author').filter(style="Sonnet"),
+            'serializer_class': PoemWithAuthorSerializer
+        },
+    )
+
+
+class SortingFlatViewListData(FlatMultipleModelAPIView):
+    sorting_field = 'plays'
+    querylist = (
+        {'queryset': Author.objects.prefetch_related('plays', 'poems'), 'serializer_class': AuthorListSerializer},
+    )
+
+
+class CustomSortingParamFlatView(SortingFlatView):
+    sorting_parameter_name = 'custom_o'
 
 
 class NoLabelView(BasicFlatView):
@@ -132,6 +155,36 @@ urlpatterns = [
 @override_settings(ROOT_URLCONF=__name__)
 class TestMMFlatViews(MultipleModelTestCase):
     maxDiff = None
+    sorted_results = [
+        {'genre': 'Comedy', 'title': 'A Midsummer Night\'s Dream', 'year': 1600, 'type': 'Play'},
+        {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'type': 'Play'},
+        {'title': "As a decrepit father takes delight", 'style': 'Sonnet', 'type': 'Poem'},
+        {'genre': 'Tragedy', 'title': 'Julius Caesar', 'year': 1623, 'type': 'Play'},
+        {'genre': 'Tragedy', 'title': 'Romeo And Juliet', 'year': 1597, 'type': 'Play'},
+        {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet', 'type': 'Poem'},
+    ]
+    sorted_results_w_author = [
+        {'genre': 'Tragedy', 'title': 'Romeo And Juliet', 'year': 1597, 'author': {'name': 'Play Shakespeare 1'},
+         'type': 'Play'},
+        {'genre': 'Comedy', 'title': "A Midsummer Night's Dream", 'year': 1600,
+         'author': {'name': 'Play Shakespeare 2'}, 'type': 'Play'},
+        {'genre': 'Tragedy', 'title': 'Julius Caesar', 'year': 1623, 'author': {'name': 'Play Shakespeare 3'},
+         'type': 'Play'},
+        {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'author': {'name': 'Play Shakespeare 4'},
+         'type': 'Play'},
+        {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet',
+         'author': {'name': 'Poem Shakespeare 1'}, 'type': 'Poem'},
+        {'title': 'As a decrepit father takes delight', 'style': 'Sonnet',
+         'author': {'name': 'Poem Shakespeare 2'}, 'type': 'Poem'}
+    ]
+    unsorted_results = [
+        {'genre': 'Tragedy', 'title': 'Romeo And Juliet', 'year': 1597, 'type': 'Play'},
+        {'genre': 'Comedy', 'title': 'A Midsummer Night\'s Dream', 'year': 1600, 'type': 'Play'},
+        {'genre': 'Tragedy', 'title': 'Julius Caesar', 'year': 1623, 'type': 'Play'},
+        {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'type': 'Play'},
+        {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet', 'type': 'Poem'},
+        {'title': "As a decrepit father takes delight", 'style': 'Sonnet', 'type': 'Poem'},
+    ]
 
     def test_post(self):
         """
@@ -242,14 +295,7 @@ class TestMMFlatViews(MultipleModelTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(len(response.data), 6)
-        self.assertEqual(response.data, [
-            {'genre': 'Tragedy', 'title': 'Romeo And Juliet', 'year': 1597, 'type': 'Play'},
-            {'genre': 'Comedy', 'title': 'A Midsummer Night\'s Dream', 'year': 1600, 'type': 'Play'},
-            {'genre': 'Tragedy', 'title': 'Julius Caesar', 'year': 1623, 'type': 'Play'},
-            {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'type': 'Play'},
-            {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet', 'type': 'Poem'},
-            {'title': "As a decrepit father takes delight", 'style': 'Sonnet', 'type': 'Poem'},
-        ])
+        self.assertEqual(response.data, self.unsorted_results)
 
     def test_no_label(self):
         """
@@ -264,14 +310,7 @@ class TestMMFlatViews(MultipleModelTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(len(response.data), 6)
-        self.assertEqual(response.data, [
-            {'title': 'Romeo And Juliet', 'genre': 'Tragedy', 'year': 1597},
-            {'title': "A Midsummer Night's Dream", 'genre': 'Comedy', 'year': 1600},
-            {'title': 'Julius Caesar', 'genre': 'Tragedy', 'year': 1623},
-            {'title': 'As You Like It', 'genre': 'Comedy', 'year': 1623},
-            {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet'},
-            {'title': "As a decrepit father takes delight", 'style': 'Sonnet'}
-        ])
+        self.assertEqual(response.data, [{k: v for k, v in i.items() if k != 'type'} for i in self.unsorted_results])
 
     def test_new_labels(self):
         """
@@ -332,14 +371,7 @@ class TestMMFlatViews(MultipleModelTestCase):
             response = view(request).render()
 
         self.assertEqual(len(response.data), 6)
-        self.assertEqual(response.data, [
-            {'genre': 'Comedy', 'title': 'A Midsummer Night\'s Dream', 'year': 1600, 'type': 'Play'},
-            {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'type': 'Play'},
-            {'title': "As a decrepit father takes delight", 'style': 'Sonnet', 'type': 'Poem'},
-            {'genre': 'Tragedy', 'title': 'Julius Caesar', 'year': 1623, 'type': 'Play'},
-            {'genre': 'Tragedy', 'title': 'Romeo And Juliet', 'year': 1597, 'type': 'Play'},
-            {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet', 'type': 'Poem'},
-        ])
+        self.assertEqual(response.data, self.sorted_results)
 
     def test_reverse_sorted(self):
         """
@@ -353,14 +385,45 @@ class TestMMFlatViews(MultipleModelTestCase):
             response = view(request).render()
 
         self.assertEqual(len(response.data), 6)
-        self.assertEqual(response.data, [
-            {'title': "Shall I compare thee to a summer's day?", 'style': 'Sonnet', 'type': 'Poem'},
-            {'genre': 'Tragedy', 'title': 'Romeo And Juliet', 'year': 1597, 'type': 'Play'},
-            {'genre': 'Tragedy', 'title': 'Julius Caesar', 'year': 1623, 'type': 'Play'},
-            {'title': "As a decrepit father takes delight", 'style': 'Sonnet', 'type': 'Poem'},
-            {'genre': 'Comedy', 'title': 'As You Like It', 'year': 1623, 'type': 'Play'},
-            {'genre': 'Comedy', 'title': 'A Midsummer Night\'s Dream', 'year': 1600, 'type': 'Play'},
-        ])
+        self.assertEqual(response.data, list(reversed(self.sorted_results)))
+
+    def test_sorting_by_request_parameter(self):
+        """
+        Adding the sorting_field attribute should order the flat items according to whatever field
+        """
+        view = SortingFlatView.as_view()
+
+        for sorting_arg in ('author', '-author'):
+            request = factory.get('/?o={}'.format(sorting_arg))
+            with self.assertNumQueries(2):
+                response = view(request).render()
+
+            self.assertEqual(len(response.data), 6)
+            self.assertEqual(response.data, list(reversed(self.sorted_results_w_author))
+                             if '-' in sorting_arg else self.sorted_results_w_author)
+
+    def test_sorting_by_custom_request_parameter(self):
+        """
+        Adding the sorting_field attribute should order the flat items according to whatever field
+        """
+        view = CustomSortingParamFlatView.as_view()
+
+        for sorting_arg in ('author', '-author'):
+            request = factory.get('/?custom_o={}'.format(sorting_arg))
+            with self.assertNumQueries(2):
+                response = view(request).render()
+
+            self.assertEqual(len(response.data), 6)
+            self.assertEqual(response.data, list(reversed(self.sorted_results_w_author))
+                             if '-' in sorting_arg else self.sorted_results_w_author)
+
+    def test_sorting_list_attribute_failure(self):
+        """
+        Attempts to sort by data value that is a list should fail
+        """
+        view = SortingFlatViewListData.as_view()
+        request = factory.get('/')
+        self.assertRaises(ValidationError, view, request)
 
     def test_ordered_wrong_sorting(self):
         """
@@ -369,7 +432,7 @@ class TestMMFlatViews(MultipleModelTestCase):
         view = WrongSortFieldView.as_view()
 
         request = factory.get('/')
-        self.assertRaises(KeyError, view, request)
+        self.assertRaises(ValidationError, view, request)
 
     def test_dynamic_querylist(self):
         """
