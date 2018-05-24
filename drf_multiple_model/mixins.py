@@ -154,6 +154,10 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         ...
     ]
     """
+    # Optional keyword to sort flat lasts by given attribute
+    # note that the attribute must by shared by ALL models
+    sorting_field = None
+
     # A mapping, similar to Django's `OrderingFilter`. In the following format: {parameter name: result field name}
     # If request query param contains sorting parameter (by default - 'o'), result will be sorted by this parameter.
     # Django-like model lookups are supported via '__', but you have to be sure that all querysets will return results
@@ -168,19 +172,6 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     result_type = list
 
     _list_attribute_error = 'Invalid sorting field. Corresponding data item is a list: {}'
-    _sorting_field = None
-
-    @property
-    def sorting_field(self):
-        """
-        Optional keyword to sort flat lasts by given attribute. Note that the attribute must by shared by ALL models.
-        It is implemented via setter/getter pattern in order to enable override of property as method.
-        """
-        return self._sorting_field
-
-    @sorting_field.setter
-    def sorting_field(self, value):
-        self._sorting_field = value
 
     def get_label(self, queryset, query_data):
         """
