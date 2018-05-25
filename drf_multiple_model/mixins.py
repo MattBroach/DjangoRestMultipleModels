@@ -174,6 +174,7 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     _list_attribute_error = 'Invalid sorting field. Corresponding data item is a list: {}'
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Protected property is required to be able to define sorting_field as a `@property`
         self._sorting_field = self.sorting_field
 
