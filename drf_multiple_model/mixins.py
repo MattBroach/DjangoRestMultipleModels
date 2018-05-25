@@ -154,6 +154,10 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         ...
     ]
     """
+    # Optional keyword to sort flat lasts by given attribute
+    # note that the attribute must by shared by ALL models
+    sorting_field = None
+
     # A mapping, similar to Django's `OrderingFilter`. In the following format: {parameter name: result field name}
     # If request query param contains sorting parameter (by default - 'o'), result will be sorted by this parameter.
     # Django-like model lookups are supported via '__', but you have to be sure that all querysets will return results
@@ -168,19 +172,10 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     result_type = list
 
     _list_attribute_error = 'Invalid sorting field. Corresponding data item is a list: {}'
-    _sorting_field = None
 
-    @property
-    def sorting_field(self):
-        """
-        Optional keyword to sort flat lasts by given attribute. Note that the attribute must by shared by ALL models.
-        It is implemented via setter/getter pattern in order to enable override of property as method.
-        """
-        return self._sorting_field
-
-    @sorting_field.setter
-    def sorting_field(self, value):
-        self._sorting_field = value
+    def __init__(self, *args, **kwargs):
+        # Protected property is required to be able to define sorting_field as a `@property`
+        self._sorting_field = self.sorting_field
 
     def get_label(self, queryset, query_data):
         """
@@ -213,7 +208,7 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         Prepares sorting parameters, and sorts results, if(as) necessary
         """
         self.prepare_sorting_field()
-        if self.sorting_field:
+        if self._sorting_field:
             results = self.sort_results(results)
 
         if request.accepted_renderer.format == 'html':
@@ -230,7 +225,7 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
             path = []
         try:
             if not param:  # If param is present, this is a recursive call
-                param = self.sorting_field
+                param = self._sorting_field
             if '__' in param:
                 root, new_param = param.split('__')
                 path.append(root)
@@ -241,9 +236,9 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
                 raise ValidationError(self._list_attribute_error.format(param))
             return data
         except TypeError:
-            raise ValidationError(self._list_attribute_error.format('.'.join(path) or self.sorting_field))
+            raise ValidationError(self._list_attribute_error.format('.'.join(path) or self._sorting_field))
         except KeyError:
-            raise ValidationError('Invalid sorting field: {}'.format('.'.join(path) or self.sorting_field))
+            raise ValidationError('Invalid sorting field: {}'.format('.'.join(path) or self._sorting_field))
 
     def prepare_sorting_field(self):
         """
@@ -252,14 +247,14 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         """
         if self.sorting_parameter_name in self.request.query_params:
             # Extract sorting parameter from query string
-            self.sorting_field = self.request.query_params.get(self.sorting_parameter_name)
+            self._sorting_field = self.request.query_params.get(self.sorting_parameter_name)
 
-        if self.sorting_field:
+        if self._sorting_field:
             # Handle sorting direction and sorting field mapping
-            self.sort_descending = self.sorting_field[0] == '-'
+            self.sort_descending = self._sorting_field[0] == '-'
             if self.sort_descending:
-                self.sorting_field = self.sorting_field[1:]
-            self.sorting_field = self.sorting_fields_map.get(self.sorting_field, self.sorting_field)
+                self._sorting_field = self._sorting_field[1:]
+            self._sorting_field = self.sorting_fields_map.get(self._sorting_field, self._sorting_field)
 
     def sort_results(self, results):
         return sorted(
