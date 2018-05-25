@@ -173,9 +173,13 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
 
     _list_attribute_error = 'Invalid sorting field. Corresponding data item is a list: {}'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Protected property is required to be able to define sorting_field as a `@property`
+    def initial(self, request, *args, **kwargs):
+        """
+        Overrides DRF's `initial` in order to set the `_sorting_field` from corresponding property in view.
+        Protected property is required in order to support overriding of `sorting_field` via `@property`, we do this
+        after original `initial` has been ran in order to make sure that view has all its properties set up.
+        """
+        super().initial(request, *args, **kwargs)
         self._sorting_field = self.sorting_field
 
     def get_label(self, queryset, query_data):
