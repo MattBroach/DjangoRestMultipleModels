@@ -1,6 +1,7 @@
 from django.db.models.query import QuerySet
 from django.core.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 class BaseMultipleModelMixin(object):
@@ -179,8 +180,8 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         Protected property is required in order to support overriding of `sorting_field` via `@property`, we do this
         after original `initial` has been ran in order to make sure that view has all its properties set up.
         """
-        super().initial(request, *args, **kwargs)
-        self._sorting_field = self.sorting_field
+        super(FlatMultipleModelMixin, self).initial(request, *args, **kwargs)
+        self._sorting_fields = [_.strip() for _ in self.sorting_field.split(',')] if self.sorting_field else None
 
     def get_label(self, queryset, query_data):
         """
@@ -212,8 +213,8 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         """
         Prepares sorting parameters, and sorts results, if(as) necessary
         """
-        self.prepare_sorting_field()
-        if self._sorting_field:
+        self.prepare_sorting_fields()
+        if self._sorting_fields:
             results = self.sort_results(results)
 
         if request.accepted_renderer.format == 'html':
@@ -222,50 +223,54 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
 
         return results
 
-    def _sort_by(self, datum, param=None, path=None):
+    def _sort_by(self, datum, param, path=None):
         """
         Key function that is used for results sorting. This is passed as argument to `sorted()`
         """
         if not path:
             path = []
         try:
-            if not param:  # If param is present, this is a recursive call
-                param = self._sorting_field
             if '__' in param:
                 root, new_param = param.split('__')
                 path.append(root)
                 return self._sort_by(datum[root], param=new_param, path=path)
+            else:
+                path.append(param)
 
             data = datum[param]
             if isinstance(data, list):
                 raise ValidationError(self._list_attribute_error.format(param))
             return data
         except TypeError:
-            raise ValidationError(self._list_attribute_error.format('.'.join(path) or self._sorting_field))
+            raise ValidationError(self._list_attribute_error.format('.'.join(path)))
         except KeyError:
-            raise ValidationError('Invalid sorting field: {}'.format('.'.join(path) or self._sorting_field))
+            raise ValidationError('Invalid sorting field: {}'.format('.'.join(path)))
 
-    def prepare_sorting_field(self):
+    def prepare_sorting_fields(self):
         """
         Determine sorting direction and sorting field based on request query parameters and sorting options
         of self
         """
         if self.sorting_parameter_name in self.request.query_params:
             # Extract sorting parameter from query string
-            self._sorting_field = self.request.query_params.get(self.sorting_parameter_name)
+            self._sorting_fields = [
+                _.strip() for _ in self.request.query_params.get(self.sorting_parameter_name).split(',')
+            ]
 
-        if self._sorting_field:
+        if self._sorting_fields:
             # Handle sorting direction and sorting field mapping
-            self.sort_descending = self._sorting_field[0] == '-'
-            if self.sort_descending:
-                self._sorting_field = self._sorting_field[1:]
-            self._sorting_field = self.sorting_fields_map.get(self._sorting_field, self._sorting_field)
+            # Note: sorting direction is determined by first field, because there is no reliable and simple-enough way
+            # to reverse all possible field types in sorting key function.
+            self.sort_descending = self._sorting_fields[0][0] == '-'
+            self._sorting_fields = [
+                self.sorting_fields_map.get(field.lstrip('-'), field.lstrip('-')) for field in self._sorting_fields
+            ]
 
     def sort_results(self, results):
         return sorted(
             results,
             reverse=self.sort_descending,
-            key=self._sort_by
+            key=lambda x: tuple(self._sort_by(x, param) for param in self._sorting_fields)
         )
 
 
