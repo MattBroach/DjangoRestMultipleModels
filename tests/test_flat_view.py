@@ -461,6 +461,24 @@ class TestMMFlatViews(MultipleModelTestCase):
             response.data, sorted(self.sorted_results_w_author, key=lambda x: (x['type'], x['title']), reverse=True)
         )
 
+    def test_sorting_by_multiple_parameters_via_request(self):
+        """
+        Sorting by multiple fields should work
+        """
+        view = SortingFlatView.as_view()
+
+        for sorting_arg in ('type,title', '-type,title'):
+            request = factory.get('/?o={}'.format(sorting_arg))
+            reverse = '-' in sorting_arg
+            with self.assertNumQueries(2):
+                response = view(request).render()
+
+            self.assertEqual(len(response.data), 6)
+            self.assertEqual(
+                response.data,
+                sorted(self.sorted_results_w_author, key=lambda x: (x['type'], x['title']), reverse=reverse)
+            )
+
     def test_ordered_wrong_sorting(self):
         """
         Sorting by a non-shared field should throw a KeyError
