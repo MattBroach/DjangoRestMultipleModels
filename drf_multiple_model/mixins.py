@@ -1,7 +1,6 @@
 from django.db.models.query import QuerySet
 from django.core.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 
 class BaseMultipleModelMixin(object):
