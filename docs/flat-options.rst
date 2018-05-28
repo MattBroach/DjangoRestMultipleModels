@@ -87,6 +87,8 @@ As with django field ordering, add '-' to the beginning of the field to enable r
 
 Also, a DRF-style sorting is supported. By default it uses ``o`` parameter from request query string. ``sorting_parameter_name`` property controls what parameter to use for sorting.
 Lookups are working in the django-filters style, like ``property_1__property_2`` (which will use object's ``property_1`` and, in turn, its ``property_2`` as key argument to ``sorted()``)
+Sorting is also possible by several fields. Sorting field have to be split with commas for that. Could be passed either via ``sorting_parameter_name`` in request parameters, or via view property.
 
+**WARNING:** the descending flat (``-``) only affects the ``reverse`` option to ``sorted()``, and is being read from the first sorting field. For all the remaining fields sorting is ascending.
 **WARNING:** the field chosen for ordering must be shared by all models/serializers in your ``querylist``.  Any attempt to sort objects along non_shared fields will throw a ``KeyError``.
 
