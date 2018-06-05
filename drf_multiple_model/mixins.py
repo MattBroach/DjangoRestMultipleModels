@@ -1,5 +1,8 @@
-from django.db.models.query import QuerySet
+import warnings
+from copy import copy
+
 from django.core.exceptions import ValidationError
+from django.db.models.query import QuerySet
 from rest_framework.response import Response
 
 
@@ -157,6 +160,7 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     # Optional keyword to sort flat lasts by given attribute
     # note that the attribute must by shared by ALL models
     sorting_field = None
+    sorting_fields = []
 
     # A mapping, similar to Django's `OrderingFilter`. In the following format: {parameter name: result field name}
     # If request query param contains sorting parameter (by default - 'o'), result will be sorted by this parameter.
@@ -164,7 +168,6 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     # with corresponding structure.
     sorting_fields_map = {}
     sorting_parameter_name = 'o'
-    sort_descending = False
 
     # Flag to append the particular django model being used to the data
     add_model_type = True
@@ -180,7 +183,15 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         after original `initial` has been ran in order to make sure that view has all its properties set up.
         """
         super(FlatMultipleModelMixin, self).initial(request, *args, **kwargs)
-        self._sorting_fields = [_.strip() for _ in self.sorting_field.split(',')] if self.sorting_field else None
+        assert not (self.sorting_field and self.sorting_fields), \
+            'Define either ``sorting_field`` or ``sorting_fields`` property, not both.'
+        if self.sorting_field:
+            warnings.warn(
+                '``sorting_field`` property is pending its deprecation. Use ``sorting_fields`` instead.',
+                PendingDeprecationWarning
+            )
+            self.sorting_fields = [self.sorting_field]
+        self._sorting_fields = self.sorting_fields
 
     def get_label(self, queryset, query_data):
         """
@@ -257,20 +268,20 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
             ]
 
         if self._sorting_fields:
-            # Handle sorting direction and sorting field mapping
-            # Note: sorting direction is determined by first field, because there is no reliable and simple-enough way
-            # to reverse all possible field types in sorting key function.
-            self.sort_descending = self._sorting_fields[0][0] == '-'
+            # Create a list of sorting parameters. Each parameter is a tuple: (field:str, descending:bool)
             self._sorting_fields = [
-                self.sorting_fields_map.get(field.lstrip('-'), field.lstrip('-')) for field in self._sorting_fields
+                (self.sorting_fields_map.get(field.lstrip('-'), field.lstrip('-')), field[0] == '-')
+                for field in self._sorting_fields
             ]
 
     def sort_results(self, results):
-        return sorted(
-            results,
-            reverse=self.sort_descending,
-            key=lambda x: tuple(self._sort_by(x, param) for param in self._sorting_fields)
-        )
+        for field, descending in reversed(self._sorting_fields):
+            results = sorted(
+                results,
+                reverse=descending,
+                key=lambda x: self._sort_by(x, field)
+            )
+        return results
 
 
 class ObjectMultipleModelMixin(BaseMultipleModelMixin):
