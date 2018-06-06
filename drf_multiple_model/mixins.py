@@ -1,5 +1,4 @@
 import warnings
-from copy import copy
 
 from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
