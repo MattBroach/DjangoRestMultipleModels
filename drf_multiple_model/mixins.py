@@ -159,7 +159,7 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     # Optional keyword to sort flat lasts by given attribute
     # note that the attribute must by shared by ALL models
     sorting_field = None
-    sorting_fields = []
+    sorting_fields = None
 
     # A mapping, similar to Django's `OrderingFilter`. In the following format: {parameter name: result field name}
     # If request query param contains sorting parameter (by default - 'o'), result will be sorted by this parameter.
