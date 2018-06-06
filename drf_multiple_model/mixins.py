@@ -183,11 +183,12 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         """
         super(FlatMultipleModelMixin, self).initial(request, *args, **kwargs)
         assert not (self.sorting_field and self.sorting_fields), \
-            'Define either ``sorting_field`` or ``sorting_fields`` property, not both.'
+            '{} should either define ``sorting_field`` or ``sorting_fields`` property, not both.' \
+            .format(self.__class__.__name__)
         if self.sorting_field:
             warnings.warn(
                 '``sorting_field`` property is pending its deprecation. Use ``sorting_fields`` instead.',
-                PendingDeprecationWarning
+                DeprecationWarning
             )
             self.sorting_fields = [self.sorting_field]
         self._sorting_fields = self.sorting_fields
