@@ -1,5 +1,7 @@
-from django.db.models.query import QuerySet
+import warnings
+
 from django.core.exceptions import ValidationError
+from django.db.models.query import QuerySet
 from rest_framework.response import Response
 
 
@@ -157,6 +159,7 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     # Optional keyword to sort flat lasts by given attribute
     # note that the attribute must by shared by ALL models
     sorting_field = None
+    sorting_fields = None
 
     # A mapping, similar to Django's `OrderingFilter`. In the following format: {parameter name: result field name}
     # If request query param contains sorting parameter (by default - 'o'), result will be sorted by this parameter.
@@ -164,7 +167,6 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     # with corresponding structure.
     sorting_fields_map = {}
     sorting_parameter_name = 'o'
-    sort_descending = False
 
     # Flag to append the particular django model being used to the data
     add_model_type = True
@@ -172,6 +174,24 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
     result_type = list
 
     _list_attribute_error = 'Invalid sorting field. Corresponding data item is a list: {}'
+
+    def initial(self, request, *args, **kwargs):
+        """
+        Overrides DRF's `initial` in order to set the `_sorting_field` from corresponding property in view.
+        Protected property is required in order to support overriding of `sorting_field` via `@property`, we do this
+        after original `initial` has been ran in order to make sure that view has all its properties set up.
+        """
+        super(FlatMultipleModelMixin, self).initial(request, *args, **kwargs)
+        assert not (self.sorting_field and self.sorting_fields), \
+            '{} should either define ``sorting_field`` or ``sorting_fields`` property, not both.' \
+            .format(self.__class__.__name__)
+        if self.sorting_field:
+            warnings.warn(
+                '``sorting_field`` property is pending its deprecation. Use ``sorting_fields`` instead.',
+                DeprecationWarning
+            )
+            self.sorting_fields = [self.sorting_field]
+        self._sorting_fields = self.sorting_fields
 
     def get_label(self, queryset, query_data):
         """
@@ -203,8 +223,8 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
         """
         Prepares sorting parameters, and sorts results, if(as) necessary
         """
-        self.prepare_sorting_field()
-        if self.sorting_field:
+        self.prepare_sorting_fields()
+        if self._sorting_fields:
             results = self.sort_results(results)
 
         if request.accepted_renderer.format == 'html':
@@ -213,51 +233,55 @@ class FlatMultipleModelMixin(BaseMultipleModelMixin):
 
         return results
 
-    def _sort_by(self, datum, param=None, path=None):
+    def _sort_by(self, datum, param, path=None):
         """
         Key function that is used for results sorting. This is passed as argument to `sorted()`
         """
         if not path:
             path = []
         try:
-            if not param:  # If param is present, this is a recursive call
-                param = self.sorting_field
             if '__' in param:
                 root, new_param = param.split('__')
                 path.append(root)
                 return self._sort_by(datum[root], param=new_param, path=path)
+            else:
+                path.append(param)
 
             data = datum[param]
             if isinstance(data, list):
                 raise ValidationError(self._list_attribute_error.format(param))
             return data
         except TypeError:
-            raise ValidationError(self._list_attribute_error.format('.'.join(path) or self.sorting_field))
+            raise ValidationError(self._list_attribute_error.format('.'.join(path)))
         except KeyError:
-            raise ValidationError('Invalid sorting field: {}'.format('.'.join(path) or self.sorting_field))
+            raise ValidationError('Invalid sorting field: {}'.format('.'.join(path)))
 
-    def prepare_sorting_field(self):
+    def prepare_sorting_fields(self):
         """
         Determine sorting direction and sorting field based on request query parameters and sorting options
         of self
         """
         if self.sorting_parameter_name in self.request.query_params:
             # Extract sorting parameter from query string
-            self.sorting_field = self.request.query_params.get(self.sorting_parameter_name)
+            self._sorting_fields = [
+                _.strip() for _ in self.request.query_params.get(self.sorting_parameter_name).split(',')
+            ]
 
-        if self.sorting_field:
-            # Handle sorting direction and sorting field mapping
-            self.sort_descending = self.sorting_field[0] == '-'
-            if self.sort_descending:
-                self.sorting_field = self.sorting_field[1:]
-            self.sorting_field = self.sorting_fields_map.get(self.sorting_field, self.sorting_field)
+        if self._sorting_fields:
+            # Create a list of sorting parameters. Each parameter is a tuple: (field:str, descending:bool)
+            self._sorting_fields = [
+                (self.sorting_fields_map.get(field.lstrip('-'), field.lstrip('-')), field[0] == '-')
+                for field in self._sorting_fields
+            ]
 
     def sort_results(self, results):
-        return sorted(
-            results,
-            reverse=self.sort_descending,
-            key=self._sort_by
-        )
+        for field, descending in reversed(self._sorting_fields):
+            results = sorted(
+                results,
+                reverse=descending,
+                key=lambda x: self._sort_by(x, field)
+            )
+        return results
 
 
 class ObjectMultipleModelMixin(BaseMultipleModelMixin):

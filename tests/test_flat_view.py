@@ -42,6 +42,14 @@ class SortingFlatView(FlatMultipleModelAPIView):
     )
 
 
+class SortingMultipleFieldsFlatView(SortingFlatView):
+    sorting_fields = ['type', 'title']
+
+
+class ReversedSortingMultipleFieldsFlatView(SortingFlatView):
+    sorting_fields = ['-type', 'title']
+
+
 class SortingFlatViewListData(FlatMultipleModelAPIView):
     sorting_field = 'plays'
     querylist = (
@@ -423,7 +431,61 @@ class TestMMFlatViews(MultipleModelTestCase):
         """
         view = SortingFlatViewListData.as_view()
         request = factory.get('/')
-        self.assertRaises(ValidationError, view, request)
+        self.assertRaises(ValidationError, view, request, msg='Invalid sorting field: year')
+
+    def test_sorting_by_multiple_parameters(self):
+        """
+        Sorting by multiple fields should work
+        """
+        view = SortingMultipleFieldsFlatView.as_view()
+
+        request = factory.get('/')
+        with self.assertNumQueries(2):
+            response = view(request).render()
+
+        self.assertEqual(len(response.data), 6)
+        self.assertEqual(
+            response.data, sorted(
+                sorted(self.sorted_results_w_author, key=lambda x: x['title']),
+                key=lambda x: x['type'],
+            )
+        )
+
+    def test_sorting_by_multiple_parameters_reversed(self):
+        """
+        Sorting by multiple fields in descending order should work
+        """
+        view = ReversedSortingMultipleFieldsFlatView.as_view()
+
+        request = factory.get('/')
+        with self.assertNumQueries(2):
+            response = view(request).render()
+
+        self.assertEqual(len(response.data), 6)
+        self.assertEqual(
+            response.data, sorted(
+                sorted(self.sorted_results_w_author, key=lambda x: x['title']),
+                key=lambda x: x['type'],
+                reverse=True
+            )
+        )
+
+    def test_sorting_by_multiple_parameters_via_request(self):
+        """
+        Sorting by multiple fields should work
+        """
+        view = SortingFlatView.as_view()
+        request = factory.get('/?o=type,-title')
+        with self.assertNumQueries(2):
+            response = view(request).render()
+
+        self.assertEqual(len(response.data), 6)
+        self.assertEqual(
+            response.data, sorted(
+                sorted(self.sorted_results_w_author, key=lambda x: x['title'], reverse=True),
+                key=lambda x: x['type']
+            )
+        )
 
     def test_ordered_wrong_sorting(self):
         """
