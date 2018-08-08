@@ -18,6 +18,7 @@ htmlcov/
 ghostdriver.log
 .coverage
 .tox/
+build/
 
 # Packaging info #
 ##################
