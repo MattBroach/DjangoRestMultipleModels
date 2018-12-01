@@ -12,12 +12,12 @@ By default, ``FlatMultipleModelAPIView`` adds a ``type`` property to returned it
     class TextAPIView(FlatMultipleModelAPIView):
         querylist = [
             {
-                'querylist': Play.objects.all(),
+                'queryset': Play.objects.all(),
                 'serializer_class': PlaySerializer,
                 'label': 'drama',
             },
             {
-                'querylist': Poem.objects.filter(style='Sonnet'),
+                'queryset': Poem.objects.filter(style='Sonnet'),
                 'serializer_class': PoemSerializer,
                 'label': 'sonnet'
             },

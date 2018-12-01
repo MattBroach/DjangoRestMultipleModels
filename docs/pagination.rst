@@ -14,8 +14,6 @@ Limit/Offset functions very similarly to (and with the same query parameters as)
     from drf_multiple_model.views import ObjectMultipleModelAPIView
     from drf_multiple_model.pagination import MultipleModelLimitOffsetPagination
 
-    class LimitPagination():
-
     class LimitPagination(MultipleModelLimitOffsetPagination):
         default_limit = 2
 
