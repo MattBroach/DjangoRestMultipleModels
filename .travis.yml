@@ -4,20 +4,25 @@ python:
  - "3.4"
  - "3.5"
  - "3.6"
+ - "3.7"
 env:
   matrix:
-   - DJANGO="Django<1.11"
    - DJANGO="Django<2"
    - DJANGO="Django<2.1"
+   - DJANGO="Django<2.2"
 install:
- - pip install "$DJANGO" coverage coveralls "djangorestframework>=3.4" flake8
+ - pip install "$DJANGO" coverage coveralls "djangorestframework>=3.9" flake8
  - pip install .
 matrix:
   exclude:
+    - python: "3.7"
+      env: DJANGO="Django<2"
     - python: "2.7"
       env: DJANGO="Django<2.1"
-    - python: "3.6"
-      env: DJANGO="Django<1.11"
+    - python: "2.7"
+      env: DJANGO="Django<2.2"
+    - python: "3.4"
+      env: DJANGO="Django<2.2"
 branches:
  only:
   - master
