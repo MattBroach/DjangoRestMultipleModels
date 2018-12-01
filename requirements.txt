@@ -1,1 +1,1 @@
-djangorestframework>=3.4
+djangorestframework>=3.9
