@@ -34,7 +34,7 @@ Using the built in Filter Backends is a nice DRY solution, but it doesn't work w
 Override get_querylist()
 ------------------------
 
-**drf-multiple-model** now supports the creation of dynamic queryLists, by overwriting the get_queryList() function rather than simply specifying the queryList variable.  This allows you to do things like construct queries using url kwargs, etc::
+**drf-multiple-model** now supports the creation of dynamic queryLists, by overwriting the get_querylist() function rather than simply specifying the queryList variable.  This allows you to do things like construct queries using url kwargs, etc::
 
     class DynamicQueryView(ObjectMultipleModelAPIView):
         def get_querylist(self):
