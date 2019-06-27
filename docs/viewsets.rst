@@ -2,7 +2,7 @@
 ViewSets
 ========
 
-For user with ViewSets and Routers, **drf-multiple-model** provides the ``ObjectMultipleModelAPIViewSet`` and ``FlatMultipleModelAPIViewSet``.  A simple configuration for using the provided ViewSets might look like::
+For use with ViewSets and Routers, **drf-multiple-model** provides the ``ObjectMultipleModelAPIViewSet`` and ``FlatMultipleModelAPIViewSet``.  A simple configuration for using the provided ViewSets might look like::
 
     from rest_framework import routers
     
