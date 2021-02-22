@@ -16,9 +16,9 @@ For use with ViewSets and Routers, **drf-multiple-model** provides the ``ObjectM
         ]
 
      router = routers.SimpleRouter()
-     router.register('texts', TextAPIView, base_name='texts')
+     router.register('texts', TextAPIView, basename='texts')
 
 
-**WARNING:** Because the ObjectMultipleModel views do not provide the ``queryset`` property, you **must** specify the ``base_name`` property when you register a ``ObjectMultipleModelAPIViewSet`` with a router. 
+**WARNING:** Because the ObjectMultipleModel views do not provide the ``queryset`` property, you **must** specify the ``basename`` property when you register a ``ObjectMultipleModelAPIViewSet`` with a router. 
 
 The ``ObjectMultipleModelAPIViewSet`` has all the same configuration options as the ``ObjectMultipleModelAPIView`` object.  For more information, see the :doc:`basic usage <basic-usage>` section. 
