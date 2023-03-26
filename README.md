@@ -106,7 +106,7 @@ which would return:
 }
 ```
 
-Or you coulde use the `FlatMultipleModelAPIView` as follows:
+Or you could use the `FlatMultipleModelAPIView` as follows:
 
 ```python
 from drf_multiple_model.views import FlatMultipleModelAPIView
